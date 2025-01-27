@@ -1,0 +1,11 @@
+Model Information:
+* title:	OTSea Island 🐙
+* source:	https://sketchfab.com/3d-models/otsea-island-c5559d6ba5154b1ab1d2c8c7747ee77e
+* author:	KillerBear (https://sketchfab.com/KillerBear)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "OTSea Island 🐙" (https://sketchfab.com/3d-models/otsea-island-c5559d6ba5154b1ab1d2c8c7747ee77e) by KillerBear (https://sketchfab.com/KillerBear) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

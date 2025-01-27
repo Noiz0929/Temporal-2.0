@@ -1,0 +1,11 @@
+Model Information:
+* title:	the volcano
+* source:	https://sketchfab.com/3d-models/the-volcano-8ca14d37f7144b03bd8bdbb8b3c8a455
+* author:	Cozmoth (https://sketchfab.com/Cozmoth)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "the volcano" (https://sketchfab.com/3d-models/the-volcano-8ca14d37f7144b03bd8bdbb8b3c8a455) by Cozmoth (https://sketchfab.com/Cozmoth) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Temporal Builder</title>
+  <link rel="stylesheet" href="./public/main.css">
+  <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  
+  <style>
+    /* Main menu styling */
+    #main-menu {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+  
+    #main-menu button {
+      margin: 10px;
+      padding: 15px 30px;
+      font-size: 20px;
+      color: white;
+      background-color: #333;
+      border: 2px solid #666;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+  
+    #main-menu button:hover {
+      background-color: #555;
+    }
+  
+    /* Video background */
+    #video-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+  
+    /* Settings panel */
+    #settings-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 15;
+      background: rgba(0, 0, 0, 0.7);
+    }
+  
+    #settings-panel .panel-content {
+      background-color: #333;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+  
+    #settings-panel .slider {
+      margin: 10px;
+      width: 200px;
+    }
+  
+    /* Color and styling for text labels */
+    #settings-panel h2 {
+      color: #fff; /* Change color for the heading */
+    }
+  
+    #settings-panel label {
+      color: #f0f0f0; /* Change color for the labels */
+      font-size: 18px; /* Optional: change font size */
+    }
+  
+    #settings-panel button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #444;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  
+    #settings-panel button:hover {
+      background-color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div id="root-window">
+    <!-- Video Background -->
+    <video id="video-background" autoplay muted loop>
+      <source src="./public/Video/Mainmenu.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+
+    <!-- Main Menu -->
+    <div id="main-menu">
+      <button id="new-game-button">New Game</button>
+      <button id="settings-button">Settings</button>
+      <button id="quit-button">Quit</button>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="settings-panel">
+      <div class="panel-content">
+        <h2>Settings</h2>
+        <label for="music-volume">Music Volume</label>
+        <input type="range" id="music-volume" class="slider" min="0" max="100" value="50">
+        <br>
+        <label for="sfx-volume">Sound Effects Volume</label>
+        <input type="range" id="sfx-volume" class="slider" min="0" max="100" value="50">
+        <br>
+        <button id="close-settings">Close</button>
+      </div>
+    </div>
+
+    <div id="render-target" class="hidden"></div>
+  </div>
+
+  <script type="module">
+    import { createScene } from './main.js';
+
+    window.onload = () => {
+      const mainMenu = document.getElementById('main-menu');
+      const renderTarget = document.getElementById('render-target');
+      const videoBackground = document.getElementById('video-background');
+      const settingsPanel = document.getElementById('settings-panel');
+      const musicVolumeSlider = document.getElementById('music-volume');
+      const sfxVolumeSlider = document.getElementById(  'sfx-volume');
+      const closeSettingsButton = document.getElementById('close-settings');
+
+      const mainMenusounds = {
+        MMbackgroundMusic: new Audio('./public/Audio/Music/Main Menu Song.mp3'),
+        MMbuttonClick: new Audio('./public/Audio/SFX/click.mp3'),
+      };
+      
+      // Create a cutscene video element
+      const cutsceneVideo = document.createElement('video');
+      cutsceneVideo.id = 'cutscene-video';
+      cutsceneVideo.src = './public/Video/cutscene1.mp4'; // Replace with your video path
+      cutsceneVideo.style.position = 'absolute';
+      cutsceneVideo.style.top = '0';
+      cutsceneVideo.style.left = '0';
+      cutsceneVideo.style.width = '100%';
+      cutsceneVideo.style.height = '100%';
+      cutsceneVideo.style.objectFit = 'cover';
+      cutsceneVideo.style.zIndex = '100';
+      cutsceneVideo.style.display = 'none'; // Hide initially
+      cutsceneVideo.autoplay = false;
+      cutsceneVideo.controls = false;
+      cutsceneVideo.muted = false;
+
+      // Append the video to the document body
+      document.body.appendChild(cutsceneVideo);
+           
+      // gameAudiosounds.GAbackgroundMusic.volume = 
+
+      let scene;
+
+      mainMenusounds.MMbackgroundMusic.loop = true;
+      mainMenusounds.MMbackgroundMusic.play();
+
+      // Handle "New Game" button
+      document.getElementById('new-game-button').addEventListener('click', () => {
+        mainMenusounds.MMbuttonClick.play();
+        mainMenu.style.display = 'none';
+        mainMenusounds.MMbackgroundMusic.pause();
+        videoBackground.pause();
+        videoBackground.style.display = 'none';
+        // Show and play the cutscene
+        cutsceneVideo.style.display = 'block';
+        cutsceneVideo.play();
+        displaySceneText(`You are travelling through time, but suddenly your time machine is broken!`);
+
+      });
+
+      // Handle cutscene end event
+      cutsceneVideo.addEventListener('ended', () => {
+        console.log('Cutscene ended. Loading scene.js...');
+        
+        // Hide the video element
+        cutsceneVideo.style.display = 'none';
+        
+        renderTarget.classList.remove('hidden');
+        scene = createScene();
+        document.addEventListener('mousedown', scene.onMouseDown, false);
+        document.addEventListener('mouseup', scene.onMouseUp, false);
+        document.addEventListener('mousemove', scene.onMouseMove, false);
+        document.addEventListener('contextmenu', (event) => event.preventDefault(), false);
+        scene.start();
+      });
+
+      // Handle "Quit" button
+      document.getElementById('quit-button').addEventListener('click', () => {
+        mainMenusounds.MMbuttonClick.play();
+        alert('Thanks for playing!');
+        window.close(); // Attempt to close the browser tab
+      });
+
+      // Handle "Settings" button
+      document.getElementById('settings-button').addEventListener('click', () => {
+        mainMenusounds.MMbuttonClick.play();
+        settingsPanel.style.display = 'flex'; // Show the settings panel
+      });
+
+      // Handle "Close" button in settings
+      closeSettingsButton.addEventListener('click', () => {
+        mainMenusounds.MMbuttonClick.play();
+        settingsPanel.style.display = 'none'; // Hide the settings panel
+      });
+
+      // Handle volume sliders for Music
+      musicVolumeSlider.addEventListener('input', (e) => {
+        const musicVolume = e.target.value / 100;  // Convert slider value to 0-1 range
+        // Adjust the music volume in your game
+        if (mainMenusounds.MMbackgroundMusic) {
+          mainMenusounds.MMbackgroundMusic.volume = musicVolume;  // Set the music volume
+        }
+        
+        
+        console.log('Music volume:', musicVolume);
+      });
+
+      // Handle volume sliders for Sound Effects
+      sfxVolumeSlider.addEventListener('input', (e) => {
+        const sfxVolume = e.target.value / 100;  // Convert slider value to 0-1 range
+        // Adjust the sound effects volume in your game
+        if (mainMenusounds.buttonClickSound) {
+          mainMenusounds.buttonClickSound.volume = sfxVolume;  // Set the sound effects volume
+        }
+        console.log('Sound effects volume:', sfxVolume);
+      });
+
+      function displaySceneText(message, duration = 8000) {
+        // Create text element
+        const sceneText = document.createElement('div');
+        sceneText.textContent = message;
+        sceneText.style.position = 'absolute';
+        sceneText.style.top = '20px';
+        sceneText.style.left = '50%';
+        sceneText.style.transform = 'translateX(-50%)';
+        sceneText.style.color = 'white';
+        sceneText.style.fontSize = '24px';
+        sceneText.style.fontWeight = 'bold';
+        sceneText.style.padding = '10px 20px';
+        sceneText.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        sceneText.style.borderRadius = '10px';
+        sceneText.style.zIndex = '200';
+      
+        // Append to the document
+        document.body.appendChild(sceneText);
+      
+        // Remove after duration
+        setTimeout(() => {
+          document.body.removeChild(sceneText);
+        }, duration);
+      }
+
+    };
+  </script>
+</body>
+</html>
