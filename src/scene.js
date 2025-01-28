@@ -39,6 +39,11 @@ export function createScene() {
   }
 
   let selectedBuildingType = null;
+  const activeBuildings = []; // Track active buildings for resource generation
+  const restrictedZones = []; // Array to store island and deco models for collision checks
+
+ 
+
   let isPaused = false;
 
   // Access the settings panel defined in index.html
@@ -310,27 +315,31 @@ export function createScene() {
   const buildingTypes = {
     Wood: {
       resourceType: "wood",
-      resources: [{ wood: 10, stone: 5 }],
+      cost: { wood: 10, stone: 5 },
       generationRates: [1],
       modelPaths: ['../public/Models/Island/forest/forest.gltf'],
+      scale: 0.5,
     },
     Stone: {
       resourceType: "stone",
-      resources: [{ wood: 5, stone: 10 }],
+      cost: { wood: 5, stone: 10 },
       generationRates: [1],
       modelPaths: ['../public/Models/Island/stone/stone.gltf'],
+      scale: 0.1,
     },
     Metal: {
       resourceType: "metal",
-      resources: [{ wood: 10, stone: 15 }],
+      cost: { wood: 10, stone: 15 },
       generationRates: [1],
       modelPaths: ['../public/Models/Island/metal/metal1.gltf'],
+      scale: 0.5,
     },
     Food: {
       resourceType: "food",
-      resources: [{ wood: 5, stone: 5 }],
+      cost: { wood: 5, stone: 5 },
       generationRates: [1],
       modelPaths: ['../public/Models/Island/food/food.gltf'],
+      scale: 0.5,
     },
   };
 
@@ -463,7 +472,7 @@ function loadTimeMachineModel(versionIndex) {
 // Load the initial model
 loadTimeMachineModel(currentVersionIndex);
 
-const gridSize = 15; // Grid size for the ocean (2x2)
+const gridSize = 14; // Grid size for the ocean (2x2)
 const gridTileSize = 2; // Size of each grid tile
 const oceanGrid = []; // Store grid tiles for placement
 
@@ -487,11 +496,12 @@ function createOceanGrid(position, size, tileSize) {
       // Set opacity to 0 to make it invisible by default
       const tileHighlight = new THREE.Mesh(
         new THREE.PlaneGeometry(tileSize, tileSize),
-        new THREE.MeshBasicMaterial({ 
+        new THREE.MeshStandardMaterial({ 
           color: 0x00ff00, 
           opacity: 0, // Set to 0 to make invisible
           transparent: true, 
           visible: true,
+          emissiveIntensity: 0.1,
           side: THREE.DoubleSide // Make it visible from both sides
         })
       );
@@ -512,33 +522,36 @@ function createOceanGrid(position, size, tileSize) {
    const mouseT = new THREE.Vector2();
  
    // Update the mousemove event listener to show highlights only on hover
-window.addEventListener("mousemove", (event) => {
-  mouseT.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouseT.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-  raycasterT.setFromCamera(mouseT, camera.camera);
-
-  const intersects = raycasterT.intersectObjects(oceanGrid.map(tile => tile.highlight));
+   window.addEventListener("mousemove", (event) => {
+    mouseT.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouseT.y = -(event.clientY / window.innerHeight) * 2 + 1;
   
-  // Reset all tiles to invisible
-  oceanGrid.forEach(tile => {
-    tile.highlight.material.opacity = 0;
+    raycasterT.setFromCamera(mouseT, camera.camera);
+  
+    const intersects = raycasterT.intersectObjects(oceanGrid.map(tile => tile.highlight));
+    
+    // Reset all tiles to invisible
+    oceanGrid.forEach(tile => {
+      tile.highlight.material.opacity = 0;
+      tile.highlight.material.emissiveIntensity = 0.5;
+    });
+  
+    if (intersects.length > 0) {
+      const intersected = intersects[0].object;
+      const hoveredTile = oceanGrid.find(tile => tile.highlight === intersected);
+  
+      if (hoveredTile && isTileBuildable(hoveredTile)) {
+        // Show highlight only if the tile is buildable
+        hoveredTile.highlight.material.opacity = 1;
+        hoveredTile.highlight.material.color.set(0xffff00);
+        hoveredTile.highlight.material.emissiveIntensity = 10000000;
+      }
+    }
   });
 
-  if (intersects.length > 0) {
-    const intersected = intersects[0].object;
-    const hoveredTile = oceanGrid.find(tile => tile.highlight === intersected);
-    if (hoveredTile) {
-      // Make the hovered tile visible with yellow color
-      hoveredTile.highlight.material.opacity = 0.5;
-      hoveredTile.highlight.material.color.set(0xffff00);
-    }
-  }
-});
 
-// Add this where your other event listeners are defined
 window.addEventListener("mousedown", (event) => {
-  if (!selectedBuildingType) return; // If no building type is selected, do nothing
+  if (!selectedBuildingType) return;
 
   mouseT.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouseT.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -550,62 +563,165 @@ window.addEventListener("mousedown", (event) => {
     const intersected = intersects[0].object;
     const selectedTile = oceanGrid.find(tile => tile.highlight === intersected);
 
-    if (selectedTile && !selectedTile.occupied) {
+    if (selectedTile) {
       addBuildingToOceanGrid(selectedBuildingType, selectedTile);
     }
   }
 });
-  // Function to add a building to the ocean grid
-  function addBuildingToOceanGrid(buildingType) {
-    const availableTile = oceanGrid.find((tile) => !tile.occupied);
-    if (!availableTile) {
-      console.log("No available tiles to place the building.");
-      return;
+
+window.addEventListener("mousedown", (event) => {
+  mouseT.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouseT.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  raycasterT.setFromCamera(mouseT, camera.camera);
+  const intersects = raycasterT.intersectObjects(oceanGrid.map(tile => tile.highlight));
+
+  if (intersects.length > 0) {
+    const intersected = intersects[0].object;
+    const selectedTile = oceanGrid.find(tile => tile.highlight === intersected);
+    if (selectedTile) {
+      const tilePosition = getTileMapPosition(selectedTile);
+      console.log(`Clicked on grid row: ${tilePosition.row}, col: ${tilePosition.col}`);
     }
-
-    const cost = buildingTypes[buildingType]?.resources[0]; // Get cost for level 1
-    if (!cost) {
-      console.error("Invalid building type.");
-      return;
-    }
-
-    // Check if resources are sufficient
-    for (let i = 0; i < clickCounts.length; i++) {
-      const resourceName = clickModels[i].name.toLowerCase();
-      if (cost[resourceName] && clickCounts[i] < cost[resourceName]) {
-        console.log(`Not enough ${resourceName} to build ${buildingType}.`);
-        return;
-      }
-    }
-
-    // Deduct resources
-    for (let i = 0; i < clickCounts.length; i++) {
-      const resourceName = clickModels[i].name.toLowerCase();
-      if (cost[resourceName]) {
-        clickCounts[i] -= cost[resourceName];
-      }
-    }
-
-    // Load and place the building model
-    const loader = new GLTFLoader();
-    loader.load(
-      buildingTypes[buildingType].modelPaths[0],
-      (gltf) => {
-        const buildingModel = gltf.scene;
-        buildingModel.position.copy(availableTile.position);
-        buildingModel.scale.set(0.5, 0.5, 0.5);
-
-        scene.add(buildingModel);
-
-        availableTile.occupied = true;
-        console.log(`${buildingType} constructed on the ocean grid.`);
-      },
-      undefined,
-      (error) => {
-        console.error("Error loading building model:", error);
-      }
-    );
   }
+});
+
+[...clickModels, ...loadedDecoModels].forEach((model) => {
+  restrictedZones.push(model.model);
+});
+
+const tileMap = [
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //0
+  [0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], //1
+  [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0], //2
+  [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],  //3
+  [0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0], //4
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0], //5
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0], //6
+  [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], //7
+  [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], //8
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //9
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], //10
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], //11
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], //12
+  [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0], //13
+  [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0], //14
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //15
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //15
+
+]; // Initialize 15x15 grid with buildable tiles (1) // 0 = restricted, 1 = buildable
+
+function getTileMapPosition(tile) {
+  const halfGridSize = gridSize / 2;
+  return {
+    row: Math.max(0, Math.min(14, Math.round((tile.position.z + halfGridSize * gridTileSize) / gridTileSize))),
+    col: Math.max(0, Math.min(14, Math.round((tile.position.x + halfGridSize * gridTileSize) / gridTileSize))),
+  };
+}
+
+
+function isTileBuildable(targetTile) {
+  const { row, col } = getTileMapPosition(targetTile);
+  if (tileMap[row]?.[col] === 0) {
+    console.log(`Tile at row ${row + 1}, col ${col + 1} is restricted.`);
+    return false;
+  }
+  return true;
+}
+
+function addBuildingToOceanGrid(buildingType, targetTile) {
+  if (!targetTile) {
+    console.log("Invalid target tile.");
+    return;
+  }
+
+  if (targetTile.occupied) {
+    console.log(`Tile at row: ${getTileMapPosition(targetTile).row}, col: ${getTileMapPosition(targetTile).col} is already occupied.`);
+    return;
+  }
+
+  if (!isTileBuildable(targetTile)) {
+    console.log("Cannot build here. Tile is restricted.");
+    return;
+  }
+
+  // Check if target tile overlaps with any restricted zones
+  const isRestricted = restrictedZones.filter(Boolean).some((zoneModel) => {
+    if (!zoneModel || !zoneModel.position) return false;
+    const distance = zoneModel.position.distanceTo(targetTile.position);
+    console.log(`Distance check to restricted zone: ${distance}`);
+    return distance < 1.2;
+  });
+  
+
+  if (isRestricted) {
+    console.log("Cannot build here. Tile overlaps with restricted zone.");
+    return;
+  }
+
+  const cost = buildingTypes[buildingType]?.cost;
+  if (!cost) {
+    console.error("Invalid building type.");
+    return;
+  }
+
+  // Check resource availability
+  for (let i = 0; i < clickCounts.length; i++) {
+    const resourceName = clickModels[i].name.toLowerCase();
+    if (cost[resourceName] && clickCounts[i] < cost[resourceName]) {
+      console.log(`Not enough ${resourceName} to build ${buildingType}.`);
+      return;
+    }
+  }
+
+  // Deduct resources
+  for (let i = 0; i < clickCounts.length; i++) {
+    const resourceName = clickModels[i].name.toLowerCase();
+    if (cost[resourceName]) {
+      clickCounts[i] -= cost[resourceName];
+    }
+  }
+
+  const loader = new GLTFLoader();
+  loader.load(
+    buildingTypes[buildingType].modelPaths[0],
+    (gltf) => {
+      const buildingModel = gltf.scene;
+      buildingModel.position.copy(targetTile.position);
+
+      const scale = buildingTypes[buildingType].scale || 1;
+      buildingModel.scale.set(scale, scale, scale);
+
+      scene.add(buildingModel);
+      targetTile.occupied = true;
+      activeBuildings.push({ type: buildingType, model: buildingModel });
+
+      console.log(`${buildingType} constructed on the ocean grid.`);
+    },
+    undefined,
+    (error) => {
+      console.error("Error loading building model:", error);
+    }
+  );
+}
+
+
+function generateResources() {
+  activeBuildings.forEach((building) => {
+    const resourceType = buildingTypes[building.type].resourceType;
+    const resourceIndex = clickModels.findIndex(
+      (model) => model.name.toLowerCase() === resourceType
+    );
+
+    if (resourceIndex !== -1) {
+      clickCounts[resourceIndex] += 1; // Generate 1 resource per second
+      labels[resourceIndex].textContent = `${clickModels[resourceIndex].name}: ${clickCounts[resourceIndex]} Kilograms`;
+    }
+  });
+}
+
+setInterval(generateResources, 1000); // Call generateResources every second
+
 
 function playMaxLevelCutscene() {
   // Create a cutscene video element
@@ -840,16 +956,7 @@ gsap.to(clickedModel.model.position, {
   },
 });
 
-      // gsap.to(clickedModel.model.position, {
-      //   y: clickedModel.model.position.y + 0.2, // Move up by 0.2 units
-      //   duration: 0.2,
-      //   ease: "power1.out",
-      //   yoyo: true,
-      //   repeat: 1, // Bounce back to original position
-      //   overwrite: 'auto' // Overwrite any ongoing animations
-      // });
 
-      // return; // Exit early if a loaded model was clicked
     }
 
     // Handle click on the Time Machine model
@@ -1057,16 +1164,23 @@ requestAnimationFrame(earthquakeloop);
 // GUI Setup
 const gui = new GUI();
 const buildFolder = gui.addFolder('Building');
+const buildingNames = {
+  Wood: 'Build Timber Mill',
+  Stone: 'Build Quarry',
+  Metal: 'Build Foundry',
+  Food: 'Build Farm',
+};
+
 Object.keys(buildingTypes).forEach((type) => {
-  buildFolder.add({ [`Build ${type}`]: () => selectBuildingType(type) }, `Build ${type}`).name(`Build ${type}`);
+  buildFolder.add({ [`${buildingNames[type]}`]: () => selectBuildingType(type) }, `${buildingNames[type]}`).name(`${buildingNames[type]}`);
 });
 buildFolder.open();
 
 function selectBuildingType(type) {
-    console.log(`Selected building type: ${type}`);
-    // Store selected type for construction
-    selectedBuildingType = type;
+  console.log(`Selected building type: ${type}`);
+  selectedBuildingType = type;
 }
+
 
 window.addEventListener("mousedown", () => {
   if (selectedBuildingType) {
@@ -1094,6 +1208,7 @@ window.addEventListener("mousedown", () => {
       gameAudiosounds.GAlavaAm.play();
       gameAudiosounds.GAoceanAm.play();
       createOceanGrid(new THREE.Vector3(0, 0.6, 0), gridSize, gridTileSize);
+      
 
       displaySceneText(`Click on those 4 islands around to collect resources to fix your time machine!! 
         10KG for each type to the first Level, 20KG, 30KG and 40KG for the last level`);
