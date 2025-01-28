@@ -1,14 +1,8 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { GUI } from 'https://cdn.jsdelivr.net/npm/lil-gui@0.20/+esm'; 
-import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
-import { Scene, EquirectangularReflectionMapping, ACESFilmicToneMapping, WebGLRenderer } from 'three';
-import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
-import { createCamera } from './src/camera.js';
-
-
-export function createScene() {
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { GUI } from 'lil-gui';
+import TWEEN from '@tweenjs/tween.js';
 
 // Renderer
 const renderer = new THREE.WebGLRenderer();
@@ -35,77 +29,6 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 directionalLight.position.set(10, 20, 10);
 directionalLight.castShadow = true;
 scene.add(directionalLight);
-
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = .2;
-
-//Set Up hdri
-function setupEnvironment() {
-  const exrLoader = new EXRLoader();
-  exrLoader.load(
-    '../public/Lighting/puresky.exr', // Replace with the path to your .exr file
-    (texture) => {
-      texture.mapping = THREE.EquirectangularReflectionMapping; // Correct mapping for environment maps
-
-      // Apply the texture as the environment map and background
-      scene.environment = texture;
-      scene.background = texture;
-
-      console.log('EXR HDRI loaded successfully!');
-    },
-    (xhr) => {
-      console.log(`EXR HDRI loading: ${(xhr.loaded / xhr.total) * 100}% loaded`);
-    },
-    (error) => {
-      console.error('Error loading EXR HDRI:', error);
-    }
-  );
-}
-// Call this function after setting up your scene and renderer
-setupEnvironment();
-
-const gltfLoader = new GLTFLoader();
-const clockOcean = new THREE.Clock();
-
-// Load the Ocean model
-gltfLoader.load("../public/Models/Ocean/ocean.gltf", function (glb) {
-  const groundModel = glb.scene;
-  groundModel.position.set(0, -0.2, 0); // Center it at the origin (adjust Y if needed)
-  groundModel.scale.set(10, 1, 10); // Adjust scale for the ground
-  scene.add(groundModel);
-
-  // Set the groundModel to ignore raycasting
-  groundModel.traverse((child) => {
-    if (child.isMesh) {
-      child.raycast = () => {}; // Override the raycast function to disable selection
-    }
-  });
-
-  // Handle animations
-  const oceanClips = glb.animations;
-
-  const mixer = new THREE.AnimationMixer(groundModel);
-  const clipOcean = THREE.AnimationClip.findByName(oceanClips, "KeyAction");
-
-  const action = mixer.clipAction(clipOcean);
-  action.play(); // Start the animation
-
-  // Add the mixer to the update loop
-  scene.userData.mixer = mixer; // Store mixer to be updated
-
-  console.log("Ground loaded successfully!");
-},
-(xhr) => {
-  // Loading progress
-  console.log(`Ground model loading: ${(xhr.loaded / xhr.total) * 100}% loaded`);
-},
-(error) => {
-  // Loading error
-  console.error("Error loading ground model:", error);
-});
-
-
-
 
 // Grid Dimensions
 const gridSize = 10; // 10x10 tiles per grid
@@ -737,4 +660,3 @@ function animate() {
 }
 
 animate();
-};
