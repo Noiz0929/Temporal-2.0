@@ -4,10 +4,9 @@ import { GUI } from 'https://cdn.jsdelivr.net/npm/lil-gui@0.20/+esm';
 import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 import { createCamera } from './camera.js';
 
-// Initialize disaster system and get its functions
-
-
 export function createScene() {
+
+  
 
   function displaySceneText(message, duration = 10000) {
     // Create text element
@@ -471,7 +470,7 @@ loadTimeMachineModel(currentVersionIndex);
 const gridSize = 14; // Grid size for the ocean (2x2)
 const gridTileSize = 2; // Size of each grid tile
 const oceanGrid = []; // Store grid tiles for placement
-const disasterSystem = initializeDisasterSystem(scene, buildings);
+
 
 // Create ocean grid
 function createOceanGrid(position, size, tileSize) {
@@ -1260,7 +1259,7 @@ function addBuilding(type, tile) {
   building.loadModel(scene);
   buildings.push(building);
 }
-
+const disasterSystem = initializeDisasterSystem(scene, buildings);
   // For testing purposes, manually trigger disasters
   document.addEventListener('keydown', (event) => {
     if (event.key === 'd') triggerDisaster(scene, buildings);
@@ -1461,11 +1460,11 @@ export function initializeDisasterSystem(scene, buildings) {
 
   // Set interval to trigger disasters every 10 seconds
   // Ensure this runs in the game loop without getting paused
-setInterval(() => {
-  if (!isPaused) {
-    randomDisasterTrigger();
-  }
-}, 10000); // Trigger disasters every 10 seconds
+// setInterval(() => {
+//   if (!isPaused) {
+//     randomDisasterTrigger();
+//   }
+// }, 10000); // Trigger disasters every 10 seconds
 
   return {
     triggerMeteoriteImpact,
