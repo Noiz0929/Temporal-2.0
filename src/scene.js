@@ -515,8 +515,6 @@ function createOceanGrid(position, size, tileSize) {
   }
 }
 
-
-
    // Highlight grid tiles on hover
    const raycasterT = new THREE.Raycaster();
    const mouseT = new THREE.Vector2();
@@ -548,7 +546,6 @@ function createOceanGrid(position, size, tileSize) {
       }
     }
   });
-
 
 window.addEventListener("mousedown", (event) => {
   if (!selectedBuildingType) return;
@@ -618,7 +615,6 @@ function getTileMapPosition(tile) {
     col: Math.max(0, Math.min(14, Math.round((tile.position.x + halfGridSize * gridTileSize) / gridTileSize))),
   };
 }
-
 
 function isTileBuildable(targetTile) {
   const { row, col } = getTileMapPosition(targetTile);
@@ -705,7 +701,6 @@ function addBuildingToOceanGrid(buildingType, targetTile) {
   );
 }
 
-
 function generateResources() {
   activeBuildings.forEach((building) => {
     const resourceType = buildingTypes[building.type].resourceType;
@@ -714,13 +709,13 @@ function generateResources() {
     );
 
     if (resourceIndex !== -1) {
-      clickCounts[resourceIndex] += 1; // Generate 1 resource per second
+      clickCounts[resourceIndex] = buildingTypes[building.type].generationRates ; // Generate 1 resource per second
+      // clickCounts[resourceIndex] = 1;
       labels[resourceIndex].textContent = `${clickModels[resourceIndex].name}: ${clickCounts[resourceIndex]} Kilograms`;
     }
   });
 }
-
-setInterval(generateResources, 1000); // Call generateResources every second
+//setInterval(generateResources, 1000); // Call generateResources every second
 
 
 function playMaxLevelCutscene() {
@@ -855,7 +850,7 @@ document.body.appendChild(updateMessage);
  // Labels and click counters
 const labelContainer = document.createElement('div');
 labelContainer.style.position = 'absolute';
-labelContainer.style.top = '10px';
+labelContainer.style.top = '300px';
 labelContainer.style.right = '10px';
 labelContainer.style.color = '#ffffff';
 labelContainer.style.fontFamily = 'Arial, sans-serif';
@@ -1163,18 +1158,28 @@ requestAnimationFrame(earthquakeloop);
 
 // GUI Setup
 const gui = new GUI();
-const buildFolder = gui.addFolder('Building');
+
+const instructionsFolder = gui.addFolder('Instructions');
+instructionsFolder.add({ MainQuest: () => alert('Click on islands to collect resources. Build building to faster your process and fix the time machine to go home.') }, 'MainQuest').name('MainQuest');
+instructionsFolder.add({ Pause: () => alert('Pause button is on the top left of your screen. You may also adjust any settings you like in the settings') }, 'Pause').name('Pause');
+instructionsFolder.add({ Building: () => alert('Select one of the building you wish to build and place on the game world there has highlight.') }, 'Building').name('Building');
+instructionsFolder.add({ Disaster: () => alert('There are natural disaster such as earthquake that will destroy your resource earn.') }, 'Disaster').name('Disaster');
+instructionsFolder.open();
+
+const buildFolder = gui.addFolder('Building (Earn resources every second)');
 const buildingNames = {
-  Wood: 'Build Timber Mill',
-  Stone: 'Build Quarry',
-  Metal: 'Build Foundry',
-  Food: 'Build Farm',
+  Wood: 'Build Timber Mill (Wood)',
+  Stone: 'Build Quarry (Stone)',
+  Metal: 'Build Foundry (Metal)',
+  Food: 'Build Farm (Food)',
 };
 
 Object.keys(buildingTypes).forEach((type) => {
   buildFolder.add({ [`${buildingNames[type]}`]: () => selectBuildingType(type) }, `${buildingNames[type]}`).name(`${buildingNames[type]}`);
 });
 buildFolder.open();
+
+
 
 function selectBuildingType(type) {
   console.log(`Selected building type: ${type}`);
