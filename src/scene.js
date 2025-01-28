@@ -2,13 +2,9 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { GUI } from 'https://cdn.jsdelivr.net/npm/lil-gui@0.20/+esm'; 
 import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
-// import TWEEN from 'https://cdnjs.cloudflare.com/ajax/libs/tween.js/25.0.0/tween.umd.js';
-// import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
-// import { Scene, EquirectangularReflectionMapping, ACESFilmicToneMapping, WebGLRenderer } from 'three';
-// import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-
 import { createCamera } from './camera.js';
+
+// Initialize disaster system and get its functions
 
 
 export function createScene() {
@@ -38,11 +34,11 @@ export function createScene() {
     }, duration);
   }
 
+  const buildings = []; // List to track buildings
+  const disasterFrequency = 15000; // Disaster frequency in milliseconds (15 seconds)
   let selectedBuildingType = null;
   const activeBuildings = []; // Track active buildings for resource generation
   const restrictedZones = []; // Array to store island and deco models for collision checks
-
- 
 
   let isPaused = false;
 
@@ -367,13 +363,13 @@ export function createScene() {
         scene.environment = texture;
         scene.background = texture;
   
-        console.log('EXR HDRI loaded successfully!');
+        //console.log('EXR HDRI loaded successfully!');
       },
       (xhr) => {
-        console.log(`EXR HDRI loading: ${(xhr.loaded / xhr.total) * 100}% loaded`);
+        //console.log(`EXR HDRI loading: ${(xhr.loaded / xhr.total) * 100}% loaded`);
       },
       (error) => {
-        console.error('Error loading EXR HDRI:', error);
+        //console.error('Error loading EXR HDRI:', error);
       }
     );
   }
@@ -395,11 +391,11 @@ export function createScene() {
     },
     (xhr) => {
       // Called while loading is in progress
-      console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
+      //console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
     },
     (error) => {
       // Called if loading the model fails
-      console.error('An error occurred while loading the GLTF model', error);
+      //console.error('An error occurred while loading the GLTF model', error);
     }
   );
 
@@ -423,15 +419,15 @@ export function createScene() {
           scene.userData.mixer = mixer; // Store mixer to be updated
       
 
-      console.log("Ground loaded successfully!");
+      //console.log("Ground loaded successfully!");
     },
     (xhr) => {
       // Loading progress
-      console.log(`Ground model loading: ${(xhr.loaded / xhr.total) * 100}% loaded`);
+      //console.log(`Ground model loading: ${(xhr.loaded / xhr.total) * 100}% loaded`);
     },
     (error) => {
       // Loading error
-      console.error("Error loading ground model:", error);
+      //console.error("Error loading ground model:", error);
     }
   );  
 
@@ -449,7 +445,7 @@ function loadTimeMachineModel(versionIndex) {
       timeMachineModel.scale.set(0.05, 0.05, 0.05);
       scene.add(timeMachineModel);
 
-      console.log(`Time Machine version ${versionIndex * 25} loaded successfully!`);
+      //console.log(`Time Machine version ${versionIndex * 25} loaded successfully!`);
 
       // Check if the Time Machine 100 is loaded
       if (versionIndex === timeMachineModels.length - 1) {
@@ -465,7 +461,7 @@ function loadTimeMachineModel(versionIndex) {
       );
     },
     (error) => {
-      console.error(`Error loading Time Machine model version ${versionIndex * 25}:`, error);
+      //console.error(`Error loading Time Machine model version ${versionIndex * 25}:`, error);
     }
   );
 }
@@ -475,6 +471,7 @@ loadTimeMachineModel(currentVersionIndex);
 const gridSize = 14; // Grid size for the ocean (2x2)
 const gridTileSize = 2; // Size of each grid tile
 const oceanGrid = []; // Store grid tiles for placement
+const disasterSystem = initializeDisasterSystem(scene, buildings);
 
 // Create ocean grid
 function createOceanGrid(position, size, tileSize) {
@@ -619,7 +616,7 @@ function getTileMapPosition(tile) {
 function isTileBuildable(targetTile) {
   const { row, col } = getTileMapPosition(targetTile);
   if (tileMap[row]?.[col] === 0) {
-    console.log(`Tile at row ${row + 1}, col ${col + 1} is restricted.`);
+    //console.log(`Tile at row ${row + 1}, col ${col + 1} is restricted.`);
     return false;
   }
   return true;
@@ -627,17 +624,17 @@ function isTileBuildable(targetTile) {
 
 function addBuildingToOceanGrid(buildingType, targetTile) {
   if (!targetTile) {
-    console.log("Invalid target tile.");
+    //console.log("Invalid target tile.");
     return;
   }
 
   if (targetTile.occupied) {
-    console.log(`Tile at row: ${getTileMapPosition(targetTile).row}, col: ${getTileMapPosition(targetTile).col} is already occupied.`);
+    //console.log(`Tile at row: ${getTileMapPosition(targetTile).row}, col: ${getTileMapPosition(targetTile).col} is already occupied.`);
     return;
   }
 
   if (!isTileBuildable(targetTile)) {
-    console.log("Cannot build here. Tile is restricted.");
+    //console.log("Cannot build here. Tile is restricted.");
     return;
   }
 
@@ -645,19 +642,19 @@ function addBuildingToOceanGrid(buildingType, targetTile) {
   const isRestricted = restrictedZones.filter(Boolean).some((zoneModel) => {
     if (!zoneModel || !zoneModel.position) return false;
     const distance = zoneModel.position.distanceTo(targetTile.position);
-    console.log(`Distance check to restricted zone: ${distance}`);
+    //console.log(`Distance check to restricted zone: ${distance}`);
     return distance < 1.2;
   });
   
 
   if (isRestricted) {
-    console.log("Cannot build here. Tile overlaps with restricted zone.");
+    //console.log("Cannot build here. Tile overlaps with restricted zone.");
     return;
   }
 
   const cost = buildingTypes[buildingType]?.cost;
   if (!cost) {
-    console.error("Invalid building type.");
+    //console.error("Invalid building type.");
     return;
   }
 
@@ -691,6 +688,10 @@ function addBuildingToOceanGrid(buildingType, targetTile) {
       scene.add(buildingModel);
       targetTile.occupied = true;
       activeBuildings.push({ type: buildingType, model: buildingModel });
+
+      const building = new Building(buildingType, targetTile.position, targetTile);
+      building.model = buildingModel;
+      buildings.push(building); // Ensure it adds to the disaster tracking list
 
       console.log(`${buildingType} constructed on the ocean grid.`);
     },
@@ -1163,7 +1164,7 @@ const instructionsFolder = gui.addFolder('Instructions');
 instructionsFolder.add({ MainQuest: () => alert('Click on islands to collect resources. Build building to faster your process and fix the time machine to go home.') }, 'MainQuest').name('MainQuest');
 instructionsFolder.add({ Pause: () => alert('Pause button is on the top left of your screen. You may also adjust any settings you like in the settings') }, 'Pause').name('Pause');
 instructionsFolder.add({ Building: () => alert('Select one of the building you wish to build and place on the game world there has highlight.') }, 'Building').name('Building');
-instructionsFolder.add({ Disaster: () => alert('There are natural disaster such as earthquake that will destroy your resource earn.') }, 'Disaster').name('Disaster');
+instructionsFolder.add({ Disaster: () => alert('There are natural disaster such as earthquake that will destroy your resource earn. Other disaster might destroy your building') }, 'Disaster').name('Disaster');
 instructionsFolder.open();
 
 const buildFolder = gui.addFolder('Building (Earn resources every second)');
@@ -1193,6 +1194,83 @@ window.addEventListener("mousedown", () => {
   }
 });
 
+class Building {
+  constructor(type, position, tile) {
+    this.type = type;
+    this.position = position;
+    this.tile = tile;
+    this.model = null;
+    this.modelPath = buildingTypes[type]?.modelPaths[0];
+    this.scale = buildingTypes[type]?.scale || 1;
+  }
+
+  loadModel(scene) {
+    const loader = new GLTFLoader();
+    if (!this.modelPath) {
+      console.error(`Model path for ${this.type} not found.`);
+      return;
+    }
+
+    loader.load(this.modelPath, (gltf) => {
+      this.model = gltf.scene;
+      this.model.position.copy(this.position);
+      this.model.scale.set(this.scale, this.scale, this.scale);
+      this.model.userData = { type: this.type, tile: this.tile };
+      scene.add(this.model);
+
+      if (this.tile) this.tile.building = this;
+    });
+  }
+}
+
+function removeBuilding(scene, building) {
+  if (!building || !building.model) return;
+  if (building.tile) building.tile.occupied = false;
+  scene.remove(building.model);
+  const index = buildings.indexOf(building);
+  if (index > -1) buildings.splice(index, 1);
+}
+
+function triggerDisaster(scene, buildings) {
+  if (buildings.length === 0) {
+    console.log("No buildings to affect.");
+    return;
+  }
+
+  const randomIndex = Math.floor(Math.random() * buildings.length);
+  const targetBuilding = buildings[randomIndex];
+
+  const disasterGeometry = new THREE.SphereGeometry(1, 32, 32);
+  const disasterMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+  const disasterEffect = new THREE.Mesh(disasterGeometry, disasterMaterial);
+
+  disasterEffect.position.copy(targetBuilding.position);
+  scene.add(disasterEffect);
+
+  setTimeout(() => {
+    scene.remove(disasterEffect);
+    removeBuilding(scene, targetBuilding);
+    buildings.splice(randomIndex, 1);
+  }, 1000); // Remove the building after 1 second
+}
+
+function addBuilding(type, tile) {
+  const position = tile.position.clone();
+  const building = new Building(type, position, tile);
+  building.loadModel(scene);
+  buildings.push(building);
+}
+
+  // For testing purposes, manually trigger disasters
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'd') triggerDisaster(scene, buildings);
+  });
+
+  setInterval(() => {
+    if (!isPaused) {
+      disasterSystem.randomDisasterTrigger(); // Call the function from returned object
+    }
+  }, 1000); // Trigger disasters every 10 seconds
 
   function draw() {
     if (scene.userData.mixer) {
@@ -1243,7 +1321,156 @@ window.addEventListener("mousedown", () => {
     stop,
     onMouseDown,
     onMouseUp,
-    onMouseMove
+    onMouseMove,
   }
 }
 
+export function initializeDisasterSystem(scene, buildings) {
+
+  // Helper function to find and remove building from the scene
+  function removeBuilding(building) {
+    const tile = building.tile;
+    if (tile) tile.building = null;
+    scene.remove(building.model);
+    const index = buildings.indexOf(building);
+    if (index !== -1) buildings.splice(index, 1);
+    console.log(`${building.type} was destroyed.`);
+  }
+
+  // Meteorite impact
+  function triggerMeteoriteImpact() {
+    if (buildings.length === 0) {
+      console.log("No buildings to destroy.");
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * buildings.length);
+    const targetBuilding = buildings[randomIndex];
+
+    const loader = new GLTFLoader();
+    loader.load('../public/Models/Island/forest/forest.gltf', (gltf) => {
+      const meteor = gltf.scene;
+      meteor.position.set(
+        targetBuilding.model.position.x,
+        20,
+        targetBuilding.model.position.z
+      );
+      meteor.scale.set(0.5, 0.5, 0.5);
+      scene.add(meteor);
+
+      const startTime = performance.now();
+      const duration = 1000;
+
+      function animateMeteor() {
+        const elapsedTime = performance.now() - startTime;
+        const t = Math.min(elapsedTime / duration, 1);
+
+        meteor.position.y = THREE.MathUtils.lerp(20, targetBuilding.model.position.y, t);
+
+        if (t < 1) {
+          requestAnimationFrame(animateMeteor);
+        } else {
+          scene.remove(meteor);
+          removeBuilding(targetBuilding);
+        }
+      }
+
+      animateMeteor();
+    });
+  }
+
+  // Thunder strike
+  function triggerThunder() {
+    if (buildings.length === 0) {
+      console.log("No buildings to damage.");
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * buildings.length);
+    const targetBuilding = buildings[randomIndex];
+
+    createLightningVFX(targetBuilding.model.position);
+    removeBuilding(targetBuilding);
+  }
+
+  function createLightningVFX(position) {
+    const lightningGeometry = new THREE.CylinderGeometry(0.1, 0.1, 10, 32);
+    const lightningMaterial = new THREE.MeshBasicMaterial({ color: 0x87ceeb });
+    const lightning = new THREE.Mesh(lightningGeometry, lightningMaterial);
+
+    lightning.position.set(position.x, position.y + 5, position.z);
+    scene.add(lightning);
+
+    setTimeout(() => scene.remove(lightning), 500);
+  }
+
+  // Tornado destruction
+  function triggerTornado() {
+    if (buildings.length === 0) {
+      console.log("No buildings to damage.");
+      return;
+    }
+
+    const affectedBuildings = [...buildings].sort(() => 0.5 - Math.random()).slice(0, 3);
+
+    affectedBuildings.forEach((building) => {
+      const loader = new GLTFLoader();
+      loader.load('../public/Models/Island/forest/forest.gltf', (gltf) => {
+        const tornado = gltf.scene;
+        tornado.scale.set(0.5, 0.5, 0.5);
+        tornado.position.set(
+          building.model.position.x,
+          building.model.position.y + 2.5,
+          building.model.position.z
+        );
+        scene.add(tornado);
+
+        let angle = 0;
+        const startTime = performance.now();
+        const duration = 2000;
+
+        function animateTornado() {
+          const elapsedTime = performance.now() - startTime;
+          const t = Math.min(elapsedTime / duration, 1);
+          angle += 0.1;
+          tornado.rotation.y = angle;
+
+          if (t < 1) {
+            requestAnimationFrame(animateTornado);
+          } else {
+            scene.remove(tornado);
+            removeBuilding(building);
+          }
+        }
+
+        animateTornado();
+      });
+    });
+  }
+
+  // Random disaster trigger
+  function randomDisasterTrigger() {
+    const disasterProbability = 0.5;
+
+    if (Math.random() < disasterProbability) {
+      const disasters = [triggerMeteoriteImpact, triggerThunder, triggerTornado];
+      const randomDisaster = disasters[Math.floor(Math.random() * disasters.length)];
+      randomDisaster();
+    }
+  }
+
+  // Set interval to trigger disasters every 10 seconds
+  // Ensure this runs in the game loop without getting paused
+setInterval(() => {
+  if (!isPaused) {
+    randomDisasterTrigger();
+  }
+}, 10000); // Trigger disasters every 10 seconds
+
+  return {
+    triggerMeteoriteImpact,
+    triggerThunder,
+    triggerTornado,
+    randomDisasterTrigger,
+  };
+}
