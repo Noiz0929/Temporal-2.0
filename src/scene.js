@@ -1376,33 +1376,30 @@ export function initializeDisasterSystem(scene, buildings) {
     const targetBuilding = buildings[randomIndex];
 
     const loader = new GLTFLoader();
-loader.load('../public/Models/Disasters/meteor/meteor.gltf', (gltf) => {
-  const meteor = gltf.scene;
-  meteor.position.set(
-    targetBuilding.model.position.x,
-    targetBuilding.model.position.y + 10,
-    targetBuilding.model.position.z
-  );
-  meteor.scale.set(1.0, 1.0, 1.0);
-
-  // Apply glowing material to the meteor
+    loader.load('../public/Models/Disaster/meteorite/meteorite.gltf', (gltf) => {
+      const meteor = gltf.scene;
+      meteor.position.set(
+        targetBuilding.model.position.x,
+        targetBuilding.model.position.y + 10,
+        targetBuilding.model.position.z
+      );
+      meteor.scale.set(0.1, 0.1, 0.1);
+      // Apply glowing material to the meteor
   meteor.traverse((child) => {
     if (child.isMesh) {
       child.material = new THREE.MeshStandardMaterial({
         color: 0xff4500,  // Orange color
         emissive: 0xff4500, // Glowing orange
-        emissiveIntensity: 20.0,
+        emissiveIntensity: 2.0,
         roughness: 0.4,
         metalness: 0.1,
       });
     }
   });
+      scene.add(meteor);
 
-  scene.add(meteor);
-
-  const startTime = performance.now();
-  const duration = 1000;
-
+      const startTime = performance.now();
+      const duration = 1000;
 
       function animateMeteor() {
         const elapsedTime = performance.now() - startTime;
@@ -1438,27 +1435,26 @@ loader.load('../public/Models/Disasters/meteor/meteor.gltf', (gltf) => {
   function createLightningVFX(position) {
     const loader = new GLTFLoader();
     loader.load(
-      '../public/Models/Disasters/lightning/lightning.gltf', // Update the path
+      '../public/Models/Disasters/lightning/lightning.gltf', // Update the path to your GLTF model
       (gltf) => {
         const lightning = gltf.scene;
-        lightning.scale.set(0.5, 0.5, 0.5); 
-        lightning.position.set(position.x, position.y - 1, position.z);
-        
-        // Traverse the model and modify materials
-        lightning.traverse((child) => {
-          if (child.isMesh) {
-            child.material = new THREE.MeshStandardMaterial({
-              color: 0x87ceeb,
-              emissive: 0x87ceeb, // Light effect
-              emissiveIntensity: 100.5,
-              transparent: true,
-              opacity: 0.8,
-            });
-          }
-        });
-  
+        lightning.scale.set(0.5, 0.5, 0.5); // Adjust scale as necessary
+        lightning.position.set(position.x, position.y, position.z);
+        // Apply glowing material to the lightning
+    lightning.traverse((child) => {
+    if (child.isMesh) {
+      child.material = new THREE.MeshStandardMaterial({
+        color: 0xadd8e6,  // Blue color
+        emissive: 0xadd8e6, // Glowing blue
+        emissiveIntensity: 2.0,
+        roughness: 0.4,
+        metalness: 0.1,
+      });
+    }
+  });
         scene.add(lightning);
   
+        // Remove the lightning effect after 500ms
         setTimeout(() => scene.remove(lightning), 500);
       },
       undefined,
@@ -1479,7 +1475,7 @@ loader.load('../public/Models/Disasters/meteor/meteor.gltf', (gltf) => {
 
     affectedBuildings.forEach((building) => {
       const loader = new GLTFLoader();
-      loader.load('../public/Models/Disasters/tornado/tornado.gltf', (gltf) => {
+      loader.load('../public/Models/Disaster/tornado/tornado.gltf', (gltf) => {
         const tornado = gltf.scene;
         tornado.scale.set(0.1, 0.1, 0.1);
         tornado.position.set(
@@ -1487,6 +1483,18 @@ loader.load('../public/Models/Disasters/meteor/meteor.gltf', (gltf) => {
           building.model.position.y ,
           building.model.position.z
         );
+        // Apply glowing material to the meteor
+    tornado.traverse((child) => {
+    if (child.isMesh) {
+      child.material = new THREE.MeshStandardMaterial({
+        color: 0xd6f6d5,  // Green color
+        emissive: 0xd6f6d5, // Glowing green
+        emissiveIntensity: 2.0,
+        roughness: 0.4,
+        metalness: 0.1,
+      });
+    }
+  });
         scene.add(tornado);
 
         let angle = 0;
