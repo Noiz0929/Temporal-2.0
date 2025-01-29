@@ -1329,12 +1329,15 @@ export function initializeDisasterSystem(scene, buildings) {
   // Helper function to find and remove building from the scene
   function removeBuilding(building) {
     const tile = building.tile;
-    if (tile) tile.building = null;
+    if (tile) {
+        tile.building = null;
+        tile.occupied = false;  // Reset tile occupation status
+    }
     scene.remove(building.model);
     const index = buildings.indexOf(building);
     if (index !== -1) buildings.splice(index, 1);
     console.log(`${building.type} was destroyed.`);
-  }
+}
 
   // Meteorite impact
   function triggerMeteoriteImpact() {
@@ -1414,12 +1417,12 @@ export function initializeDisasterSystem(scene, buildings) {
 
     affectedBuildings.forEach((building) => {
       const loader = new GLTFLoader();
-      loader.load('../public/Models/Island/forest/forest.gltf', (gltf) => {
+      loader.load('../public/Models/Disasters/tornado/tornado.gltf', (gltf) => {
         const tornado = gltf.scene;
-        tornado.scale.set(0.5, 0.5, 0.5);
+        tornado.scale.set(0.1, 0.1, 0.1);
         tornado.position.set(
           building.model.position.x,
-          building.model.position.y + 2.5,
+          building.model.position.y ,
           building.model.position.z
         );
         scene.add(tornado);
