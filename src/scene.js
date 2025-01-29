@@ -229,7 +229,7 @@ export function createScene() {
         gameAudiosounds.GAstone.volume = sfxVolume; // Adjust the volume
         gameAudiosounds.GAupSuccess.volume = sfxVolume; // Adjust the volume
         gameAudiosounds.GAupFailed.volume = sfxVolume; // Adjust the volume
-        gameAudiosounds.GAmeteor.volume = sfxVolume+0.2; // Adjust the volume
+        gameAudiosounds.GAmeteor.volume = sfxVolume; // Adjust the volume
         gameAudiosounds.GAtornado.volume = sfxVolume; // Adjust the volume
         gameAudiosounds.GAthunder.volume = sfxVolume; // Adjust the volume
         gameAudiosounds.GAbuild.volume = sfxVolume; // Adjust the volume
