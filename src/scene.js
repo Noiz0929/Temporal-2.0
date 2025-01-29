@@ -1484,7 +1484,7 @@ export function initializeDisasterSystem(scene, buildings) {
   function createLightningVFX(position) {
     const loader = new GLTFLoader();
     loader.load(
-      '../public/Models/Disasters/lightning/lightning.gltf', // Update the path to your GLTF model
+      '../public/Models/Disaster/lightning/lightning.gltf', // Update the path to your GLTF model
       (gltf) => {
         const lightning = gltf.scene;
         lightning.scale.set(0.5, 0.5, 0.5); // Adjust scale as necessary
