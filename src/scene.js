@@ -1358,6 +1358,18 @@ export function initializeDisasterSystem(scene, buildings) {
         targetBuilding.model.position.z
       );
       meteor.scale.set(0.1, 0.1, 0.1);
+      // Apply glowing material to the meteor
+  meteor.traverse((child) => {
+    if (child.isMesh) {
+      child.material = new THREE.MeshStandardMaterial({
+        color: 0xff4500,  // Orange color
+        emissive: 0xff4500, // Glowing orange
+        emissiveIntensity: 2.0,
+        roughness: 0.4,
+        metalness: 0.1,
+      });
+    }
+  });
       scene.add(meteor);
 
       const startTime = performance.now();
@@ -1402,6 +1414,18 @@ export function initializeDisasterSystem(scene, buildings) {
         const lightning = gltf.scene;
         lightning.scale.set(0.5, 0.5, 0.5); // Adjust scale as necessary
         lightning.position.set(position.x, position.y, position.z);
+        // Apply glowing material to the lightning
+    lightning.traverse((child) => {
+    if (child.isMesh) {
+      child.material = new THREE.MeshStandardMaterial({
+        color: 0xadd8e6,  // Blue color
+        emissive: 0xadd8e6, // Glowing blue
+        emissiveIntensity: 2.0,
+        roughness: 0.4,
+        metalness: 0.1,
+      });
+    }
+  });
         scene.add(lightning);
   
         // Remove the lightning effect after 500ms
@@ -1433,6 +1457,18 @@ export function initializeDisasterSystem(scene, buildings) {
           building.model.position.y ,
           building.model.position.z
         );
+        // Apply glowing material to the meteor
+    tornado.traverse((child) => {
+    if (child.isMesh) {
+      child.material = new THREE.MeshStandardMaterial({
+        color: 0xd6f6d5,  // Green color
+        emissive: 0xd6f6d5, // Glowing green
+        emissiveIntensity: 2.0,
+        roughness: 0.4,
+        metalness: 0.1,
+      });
+    }
+  });
         scene.add(tornado);
 
         let angle = 0;
