@@ -492,13 +492,13 @@ function createOceanGrid(position, size, tileSize) {
       // Set opacity to 0 to make it invisible by default
       const tileHighlight = new THREE.Mesh(
         new THREE.PlaneGeometry(tileSize, tileSize),
-        new THREE.MeshStandardMaterial({ 
-          color: 0x00ff00, 
-          opacity: 0, // Set to 0 to make invisible
-          transparent: true, 
-          visible: true,
-          emissiveIntensity: 0.1,
-          side: THREE.DoubleSide // Make it visible from both sides
+        new THREE.MeshPhysicalMaterial({
+          color: 0x00ff00, // Base color
+          emissive: 0x32cd32, // Lime green emissive
+          emissiveIntensity: 0, // Initially invisible
+          transparent: true,
+          opacity: 0, // Fully invisible by default
+          side: THREE.DoubleSide,
         })
       );
       tileHighlight.rotation.x = -Math.PI / 2; // Face upward
@@ -525,20 +525,19 @@ function createOceanGrid(position, size, tileSize) {
     const intersects = raycasterT.intersectObjects(oceanGrid.map(tile => tile.highlight));
     
     // Reset all tiles to invisible
-    oceanGrid.forEach(tile => {
-      tile.highlight.material.opacity = 0;
-      tile.highlight.material.emissiveIntensity = 0.5;
-    });
-  
-    if (intersects.length > 0) {
-      const intersected = intersects[0].object;
-      const hoveredTile = oceanGrid.find(tile => tile.highlight === intersected);
-  
-      if (hoveredTile && isTileBuildable(hoveredTile)) {
-        // Show highlight only if the tile is buildable
-        hoveredTile.highlight.material.opacity = 1;
-        hoveredTile.highlight.material.color.set(0xffff00);
-        hoveredTile.highlight.material.emissiveIntensity = 10000000;
+  oceanGrid.forEach(tile => {
+    tile.highlight.material.opacity = 0;
+    tile.highlight.material.emissiveIntensity = 0;
+  });
+
+  if (intersects.length > 0) {
+    const intersected = intersects[0].object;
+    const hoveredTile = oceanGrid.find(tile => tile.highlight === intersected);
+
+    if (hoveredTile && isTileBuildable(hoveredTile)) {
+      // Show highlight only if the tile is buildable
+      hoveredTile.highlight.material.opacity = 1;
+      hoveredTile.highlight.material.emissiveIntensity = 200; // Glow effect
       }
     }
   });
@@ -1313,8 +1312,6 @@ const disasterSystem = initializeDisasterSystem(scene, buildings);
     camera.onMouseMove(event);
   }
 
-  
-
   return {
     start,
     stop,
@@ -1350,18 +1347,33 @@ export function initializeDisasterSystem(scene, buildings) {
     const targetBuilding = buildings[randomIndex];
 
     const loader = new GLTFLoader();
-    loader.load('../public/Models/Disasters/meteor/meteor.gltf', (gltf) => {
-      const meteor = gltf.scene;
-      meteor.position.set(
-        targetBuilding.model.position.x,
-        targetBuilding.model.position.y + 10,
-        targetBuilding.model.position.z
-      );
-      meteor.scale.set(1.0, 1.0, 1.0);
-      scene.add(meteor);
+loader.load('../public/Models/Disasters/meteor/meteor.gltf', (gltf) => {
+  const meteor = gltf.scene;
+  meteor.position.set(
+    targetBuilding.model.position.x,
+    targetBuilding.model.position.y + 10,
+    targetBuilding.model.position.z
+  );
+  meteor.scale.set(1.0, 1.0, 1.0);
 
-      const startTime = performance.now();
-      const duration = 1000;
+  // Apply glowing material to the meteor
+  meteor.traverse((child) => {
+    if (child.isMesh) {
+      child.material = new THREE.MeshStandardMaterial({
+        color: 0xff4500,  // Orange color
+        emissive: 0xff4500, // Glowing orange
+        emissiveIntensity: 20.0,
+        roughness: 0.4,
+        metalness: 0.1,
+      });
+    }
+  });
+
+  scene.add(meteor);
+
+  const startTime = performance.now();
+  const duration = 1000;
+
 
       function animateMeteor() {
         const elapsedTime = performance.now() - startTime;
@@ -1397,14 +1409,27 @@ export function initializeDisasterSystem(scene, buildings) {
   function createLightningVFX(position) {
     const loader = new GLTFLoader();
     loader.load(
-      '../public/Models/Disasters/lightning/lightning.gltf', // Update the path to your GLTF model
+      '../public/Models/Disasters/lightning/lightning.gltf', // Update the path
       (gltf) => {
         const lightning = gltf.scene;
-        lightning.scale.set(0.5, 0.5, 0.5); // Adjust scale as necessary
+        lightning.scale.set(0.5, 0.5, 0.5); 
         lightning.position.set(position.x, position.y - 1, position.z);
+        
+        // Traverse the model and modify materials
+        lightning.traverse((child) => {
+          if (child.isMesh) {
+            child.material = new THREE.MeshStandardMaterial({
+              color: 0x87ceeb,
+              emissive: 0x87ceeb, // Light effect
+              emissiveIntensity: 100.5,
+              transparent: true,
+              opacity: 0.8,
+            });
+          }
+        });
+  
         scene.add(lightning);
   
-        // Remove the lightning effect after 500ms
         setTimeout(() => scene.remove(lightning), 500);
       },
       undefined,
