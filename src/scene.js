@@ -1400,8 +1400,8 @@ export function initializeDisasterSystem(scene, buildings) {
       '../public/Models/Disasters/lightning/lightning.gltf', // Update the path to your GLTF model
       (gltf) => {
         const lightning = gltf.scene;
-        lightning.scale.set(0.1, 0.1, 0.1); // Adjust scale as necessary
-        lightning.position.set(position.x, position.y - 1, position.z);
+        lightning.scale.set(0.5, 0.5, 0.5); // Adjust scale as necessary
+        lightning.position.set(position.x, position.y, position.z);
         scene.add(lightning);
   
         // Remove the lightning effect after 500ms
