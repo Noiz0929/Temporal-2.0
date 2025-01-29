@@ -1381,29 +1381,37 @@ export function initializeDisasterSystem(scene, buildings) {
     });
   }
 
-  // Thunder strike
   function triggerThunder() {
     if (buildings.length === 0) {
       console.log("No buildings to damage.");
       return;
     }
-
+  
     const randomIndex = Math.floor(Math.random() * buildings.length);
     const targetBuilding = buildings[randomIndex];
-
+  
     createLightningVFX(targetBuilding.model.position);
     removeBuilding(targetBuilding);
   }
-
+  
   function createLightningVFX(position) {
-    const lightningGeometry = new THREE.CylinderGeometry(0.1, 0.1, 10, 32);
-    const lightningMaterial = new THREE.MeshBasicMaterial({ color: 0x87ceeb });
-    const lightning = new THREE.Mesh(lightningGeometry, lightningMaterial);
-
-    lightning.position.set(position.x, position.y + 5, position.z);
-    scene.add(lightning);
-
-    setTimeout(() => scene.remove(lightning), 500);
+    const loader = new GLTFLoader();
+    loader.load(
+      '../public/Models/Disasters/lightning/lightning.gltf', // Update the path to your GLTF model
+      (gltf) => {
+        const lightning = gltf.scene;
+        lightning.scale.set(0.5, 0.5, 0.5); // Adjust scale as necessary
+        lightning.position.set(position.x, position.y - 1, position.z);
+        scene.add(lightning);
+  
+        // Remove the lightning effect after 500ms
+        setTimeout(() => scene.remove(lightning), 500);
+      },
+      undefined,
+      (error) => {
+        console.error("Error loading thunder effect model:", error);
+      }
+    );
   }
 
   // Tornado destruction
