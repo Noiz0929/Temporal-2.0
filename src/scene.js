@@ -854,7 +854,7 @@ document.body.appendChild(updateMessage);
  // Labels and click counters
 const labelContainer = document.createElement('div');
 labelContainer.style.position = 'absolute';
-labelContainer.style.top = '300px';
+labelContainer.style.top = '330px';
 labelContainer.style.right = '10px';
 labelContainer.style.color = '#ffffff';
 labelContainer.style.fontFamily = 'Arial, sans-serif';
@@ -1144,9 +1144,9 @@ function earthquakeloop(currentTime) {
         console.log("Earthquake triggered!");
         camera.earthquake(2, 0.7); // Trigger the earthquake for 3 seconds with 0.7 intensity
 
-        // Deduct 10 from clickCounts and clamp to a minimum of 0
+        // Deduct 30% from clickCounts and clamp to a minimum of 0 (no decimals)
         for (let i = 0; i < 4; i++) {
-          clickCounts[i] = Math.max(0, clickCounts[i] - 10); // Deduct 10, but ensure it doesn't go below 0
+          clickCounts[i] = Math.max(0, Math.floor(clickCounts[i] * 0.7)); // Deduct 30% and round down
           labels[i].textContent = `${clickModels[i].name}: ${clickCounts[i]} Kilograms / ${currentCost} Kilograms`; // Update the label
         }
       } else {
@@ -1163,11 +1163,35 @@ requestAnimationFrame(earthquakeloop);
 // GUI Setup
 const gui = new GUI();
 
+const gameDetails = `
+Time Machine Fixing Costs:
+  - Level 1: 300 of each resource
+  - Level 2: 600 of each resource
+  - Level 3: 900 of each resource
+  - Level 4: 1200 of each resource
+
+Building Costs:
+  - Timber Mill (Wood): 200 Wood, 100 Stone
+  - Quarry (Stone): 100 Wood, 200 Stone
+  - Foundry (Metal): 300 Wood, 300 Stone
+  - Farm (Food): 150 Wood, 100 Stone
+
+Natural Disasters:
+  - Earthquake: Deducts 30% of resources (60% chance every 45s)
+  - Meteor: Destroys 1 random building (50% chance every 30s)
+  - Thunder: Destroys 1 random building (40% chance every 25s)
+  - Tornado: Destroys 3 random buildings (30% chance every 45s)
+
+Random Disaster Trigger:
+  - Meteor, Thunder, Tornado (45% chance every 20s)
+`;
+
 const instructionsFolder = gui.addFolder('Instructions');
-instructionsFolder.add({ MainQuest: () => alert('Click on islands to collect resources. Build building to faster your process and fix the time machine to go home.') }, 'MainQuest').name('MainQuest');
+instructionsFolder.add({ MainQuest: () => alert('Click on islands to collect resources. Build building to faster your process and fix the time machine to go home. Check more info in the details.') }, 'MainQuest').name('MainQuest');
 instructionsFolder.add({ Pause: () => alert('Pause button is on the top left of your screen. You may also adjust any settings you like in the settings') }, 'Pause').name('Pause');
-instructionsFolder.add({ Building: () => alert('Select one of the building you wish to build and place on the game world there has highlight.') }, 'Building').name('Building');
-instructionsFolder.add({ Disaster: () => alert('There are natural disaster such as earthquake that will destroy your resource earn. Other disaster might destroy your building') }, 'Disaster').name('Disaster');
+instructionsFolder.add({ Building: () => alert('Select one of the building you wish to build and place on the game world there has highlight. Check more info in the details.') }, 'Building').name('Building');
+instructionsFolder.add({ Disaster: () => alert('There are natural disaster such as earthquake that will destroy your resource earn. Other disaster might destroy your building. Check more info in the details.') }, 'Disaster').name('Disaster');
+instructionsFolder.add({ Details: () => alert(gameDetails) }, 'Details').name('Details');
 instructionsFolder.open();
 
 const buildFolder = gui.addFolder('Building (Earn resources every second)');
@@ -1233,7 +1257,7 @@ function removeBuilding(scene, building) {
   const index = buildings.indexOf(building);
   if (index > -1) buildings.splice(index, 1);
 }
-
+//depre
 function triggerDisaster(scene, buildings) {
   if (buildings.length === 0) {
     console.log("No buildings to affect.");
@@ -1256,7 +1280,7 @@ function triggerDisaster(scene, buildings) {
     buildings.splice(randomIndex, 1);
   }, 1000); // Remove the building after 1 second
 }
-
+//depre
 function addBuilding(type, tile) {
   const position = tile.position.clone();
   const building = new Building(type, position, tile);
@@ -1265,6 +1289,7 @@ function addBuilding(type, tile) {
 }
 const disasterSystem = initializeDisasterSystem(scene, buildings);
 
+//cheat
 document.addEventListener('keydown', (event) => {
   switch (event.key) {
     case '1':
@@ -1278,6 +1303,16 @@ document.addEventListener('keydown', (event) => {
     case '3':
       console.log('Meteor cheat activated!');
       disasterSystem.triggerMeteoriteImpact();
+      break;
+    case '4':
+      console.log('Earthquake cheat activated!');
+      gameAudiosounds.GAearthquake.play();
+      camera.earthquake(2, 0.7); // Trigger the earthquake for 3 seconds with 0.7 intensity
+      // Deduct 30% from clickCounts and clamp to a minimum of 0 (no decimals)
+      for (let i = 0; i < 4; i++) {
+        clickCounts[i] = Math.max(0, Math.floor(clickCounts[i] * 0.7)); // Deduct 30% and round down
+        labels[i].textContent = `${clickModels[i].name}: ${clickCounts[i]} Kilograms / ${currentCost} Kilograms`; // Update the label
+      }
       break;
     case 'd':
       console.log('Cheat activated! Resources increased.');
