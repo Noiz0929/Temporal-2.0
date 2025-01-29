@@ -6,8 +6,6 @@ import { createCamera } from './camera.js';
 
 export function createScene() {
 
-  
-
   function displaySceneText(message, duration = 10000) {
     // Create text element
     const sceneText = document.createElement('div');
@@ -34,7 +32,6 @@ export function createScene() {
   }
 
   const buildings = []; // List to track buildings
-  const disasterFrequency = 15000; // Disaster frequency in milliseconds (15 seconds)
   let selectedBuildingType = null;
   const activeBuildings = []; // Track active buildings for resource generation
   const restrictedZones = []; // Array to store island and deco models for collision checks
@@ -310,28 +307,28 @@ export function createScene() {
   const buildingTypes = {
     Wood: {
       resourceType: "wood",
-      cost: { wood: 10, stone: 5 },
+      cost: { wood: 200, stone: 100 },
       generationRates: [1],
       modelPaths: ['../public/Models/Building/Timber/timber.gltf'],
       scale: 0.1,
     },
     Stone: {
       resourceType: "stone",
-      cost: { wood: 5, stone: 10 },
+      cost: { wood: 100, stone: 200 },
       generationRates: [1],
       modelPaths: ['../public/Models/Building/Quarry/quarry.gltf'],
       scale: 0.1,
     },
     Metal: {
       resourceType: "metal",
-      cost: { wood: 10, stone: 15 },
+      cost: { wood: 300, stone: 300 },
       generationRates: [1],
       modelPaths: ['../public/Models/Building/Foundry/foundry.gltf'],
       scale: 0.1,
     },
     Food: {
       resourceType: "food",
-      cost: { wood: 5, stone: 5 },
+      cost: { wood: 150, stone: 100 },
       generationRates: [1],
       modelPaths: ['../public/Models/Building/Farm/farm.gltf'],
       scale: 0.1,
@@ -342,10 +339,9 @@ export function createScene() {
   let timeMachineModel = null; // Reference to the currently displayed model
 
   const gltfLoader = new GLTFLoader();
-  let centerModel = null;
   const loadedModels = [];
   const loadedDecoModels = [];
-  const clickCounts = [10000, 10000, 10000, 10000]; //kilograms count
+  let clickCounts = [0, 0, 0, 0]; //kilograms count
   
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = .2;
@@ -599,7 +595,7 @@ const tileMap = [
   [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0], //13
   [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0], //14
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //15
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //15
+  // [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //15
 
 ]; // Initialize 15x15 grid with buildable tiles (1) // 0 = restricted, 1 = buildable
 
@@ -657,9 +653,11 @@ function addBuildingToOceanGrid(buildingType, targetTile) {
   }
 
   // Check resource availability
-  for (let i = 0; i < clickCounts.length; i++) {
-    const resourceName = clickModels[i].name.toLowerCase();
-    if (cost[resourceName] && clickCounts[i] < cost[resourceName]) {
+  for (let i = 0; i < clickModels.length; i++) {
+    const resourceName = clickModels[i]?.name?.toLowerCase(); // Ensure the name exists
+    if (!resourceName) continue; // Skip if the name is missing
+    
+    if (cost[resourceName] !== undefined && clickCounts[i] < cost[resourceName]) {
       console.log(`Not enough ${resourceName} to build ${buildingType}.`);
       return;
     }
@@ -708,13 +706,20 @@ function generateResources() {
     );
 
     if (resourceIndex !== -1) {
-      clickCounts[resourceIndex] = buildingTypes[building.type].generationRates ; // Generate 1 resource per second
-      // clickCounts[resourceIndex] = 1;
-      labels[resourceIndex].textContent = `${clickModels[resourceIndex].name}: ${clickCounts[resourceIndex]} Kilograms`;
+      // Ensure the generation rate is a number, not an array
+      const generationRate = buildingTypes[building.type].generationRates[0] || 0;
+
+      // Increment resource count
+      clickCounts[resourceIndex] += generationRate;
+
+      // Update the resource label
+      labels[resourceIndex].textContent = `${clickModels[resourceIndex].name}: ${clickCounts[resourceIndex]} Kilograms / ${currentCost} Kilograms`;
     }
   });
 }
-//setInterval(generateResources, 1000); // Call generateResources every second
+
+// Call generateResources every second
+setInterval(generateResources, 1000);
 
 
 function playMaxLevelCutscene() {
@@ -861,7 +866,7 @@ labelContainer.style.userSelect = 'none';
 document.body.appendChild(labelContainer);
 
 // Define upgrade costs for each version of the Time Machine
-const upgradeCosts = [10, 20, 30, 40, 5000]; // Adjust as needed
+const upgradeCosts = [300, 600, 900, 1200, 10000]; // Adjust as needed
 let currentCost = upgradeCosts[0]; // Start with the cost of the first upgrade
 
 const labels = clickModels.map((model, index) => {
@@ -1124,8 +1129,8 @@ gameWindow.addEventListener("mousedown", onDocumentMouseDown);
   }
   
   let lastEarthquakeTime = 0; // Tracks the last time an earthquake occurred
-const EARTHQUAKE_INTERVAL = 20000; // 60 seconds in milliseconds
-const EARTHQUAKE_CHANCE = 0.3; // 30% chance
+const EARTHQUAKE_INTERVAL = 45000; // 60 seconds in milliseconds
+const EARTHQUAKE_CHANCE = 0.6; // 30% chance
 
 function earthquakeloop(currentTime) {
   if (!isPaused) {
@@ -1259,16 +1264,40 @@ function addBuilding(type, tile) {
   buildings.push(building);
 }
 const disasterSystem = initializeDisasterSystem(scene, buildings);
-  // For testing purposes, manually trigger disasters
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'd') triggerDisaster(scene, buildings);
-  });
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'd') {
+    triggerDisaster(scene, buildings);
+
+    // Cheat: Add resources to all types
+    for (let i = 0; i < clickCounts.length; i++) {
+      clickCounts[i] += 10000;
+      labels[i].textContent = `${clickModels[i].name}: ${clickCounts[i]} Kilograms / ${currentCost} Kilograms`;
+    }
+    console.log('Cheat activated! Resources increased.');
+  }
+});
 
   setInterval(() => {
     if (!isPaused) {
       disasterSystem.randomDisasterTrigger(); // Call the function from returned object
     }
-  }, 1000); // Trigger disasters every 10 seconds
+  }, 20000);
+  setInterval(() => {
+    if (!isPaused) {
+      disasterSystem.randomMetoerTrigger(); // Call the function from returned object
+    }
+  }, 30000);
+  setInterval(() => {
+    if (!isPaused) {
+      disasterSystem.randomThunderTrigger(); // Call the function from returned object
+    }
+  }, 25000);
+  setInterval(() => {
+    if (!isPaused) {
+      disasterSystem.randomTornadoTrigger(); // Call the function from returned object
+    }
+  }, 45000);
+
 
   function draw() {
     if (scene.userData.mixer) {
@@ -1485,12 +1514,34 @@ loader.load('../public/Models/Disasters/meteor/meteor.gltf', (gltf) => {
 
   // Random disaster trigger
   function randomDisasterTrigger() {
-    const disasterProbability = 0.5;
+    const disasterProbability = 0.45;
 
     if (Math.random() < disasterProbability) {
       const disasters = [triggerMeteoriteImpact, triggerThunder, triggerTornado];
       const randomDisaster = disasters[Math.floor(Math.random() * disasters.length)];
       randomDisaster();
+    }
+  }
+
+  function randomMetoerTrigger() {
+    const meteorProbability = 0.50;
+
+    if (Math.random() < meteorProbability) {
+      triggerMeteoriteImpact;
+    }
+  }
+  function randomThunderTrigger() {
+    const ThunderProbability = 0.40;
+
+    if (Math.random() < ThunderProbability) {
+      triggerThunder;
+    }
+  }
+  function randomTornadoTrigger() {
+    const TornadoProbability = 0.30;
+
+    if (Math.random() < TornadoProbability) {
+      triggerTornado;
     }
   }
 
@@ -1507,5 +1558,9 @@ loader.load('../public/Models/Disasters/meteor/meteor.gltf', (gltf) => {
     triggerThunder,
     triggerTornado,
     randomDisasterTrigger,
+    randomMetoerTrigger,
+    randomThunderTrigger,
+    randomTornadoTrigger,
+
   };
 }
