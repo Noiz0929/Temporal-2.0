@@ -192,6 +192,10 @@ export function createScene() {
     GAwood: new Audio('./public/Audio/SFX/wood.mp3'),
     GAupSuccess: new Audio('./public/Audio/SFX/upgrade success.mp3'),
     GAupFailed: new Audio('./public/Audio/SFX/upgrade fail.mp3'),
+    GAmeteor: new Audio('./public/Audio/SFX/meteor.mp3'),
+    GAtornado: new Audio('./public/Audio/SFX/tornado.mp3'),
+    GAthunder: new Audio('./public/Audio/SFX/thunder.mp3'),
+    GAbuild: new Audio('./public/Audio/SFX/building placing.mp3'),
 
   };
 
@@ -225,9 +229,13 @@ export function createScene() {
         gameAudiosounds.GAstone.volume = sfxVolume; // Adjust the volume
         gameAudiosounds.GAupSuccess.volume = sfxVolume; // Adjust the volume
         gameAudiosounds.GAupFailed.volume = sfxVolume; // Adjust the volume
+        gameAudiosounds.GAmeteor.volume = sfxVolume+0.2; // Adjust the volume
+        gameAudiosounds.GAtornado.volume = sfxVolume; // Adjust the volume
+        gameAudiosounds.GAthunder.volume = sfxVolume; // Adjust the volume
+        gameAudiosounds.GAbuild.volume = sfxVolume; // Adjust the volume
         console.log('Sound effects volume:', sfxVolume);
       });
-      
+
   //island
   const clickModels = [
     { path: "../public/Models/Island/metal/metal1.gltf", position: [-6, 0.1, 6], scale: 1, name:"Metal" }, // Metal
@@ -553,6 +561,8 @@ window.addEventListener("mousedown", (event) => {
 
     if (selectedTile) {
       addBuildingToOceanGrid(selectedBuildingType, selectedTile);
+      
+
     }
   }
 });
@@ -682,6 +692,7 @@ function addBuildingToOceanGrid(buildingType, targetTile) {
       buildingModel.scale.set(scale, scale, scale);
 
       scene.add(buildingModel);
+      gameAudiosounds.GAbuild.play();
       targetTile.occupied = true;
       activeBuildings.push({ type: buildingType, model: buildingModel });
 
@@ -1287,7 +1298,7 @@ function addBuilding(type, tile) {
   building.loadModel(scene);
   buildings.push(building);
 }
-const disasterSystem = initializeDisasterSystem(scene, buildings);
+const disasterSystem = initializeDisasterSystem(scene, buildings, gameAudiosounds);
 
 //cheat
 document.addEventListener('keydown', (event) => {
@@ -1399,7 +1410,7 @@ document.addEventListener('keydown', (event) => {
   }
 }
 
-export function initializeDisasterSystem(scene, buildings) {
+export function initializeDisasterSystem(scene, buildings, gameAudiosounds) {
 
   // Helper function to find and remove building from the scene
   function removeBuilding(building) {
@@ -1446,7 +1457,7 @@ export function initializeDisasterSystem(scene, buildings) {
     }
   });
       scene.add(meteor);
-
+      gameAudiosounds.GAmeteor.play();
       const startTime = performance.now();
       const duration = 1000;
 
@@ -1478,10 +1489,12 @@ export function initializeDisasterSystem(scene, buildings) {
     const targetBuilding = buildings[randomIndex];
   
     createLightningVFX(targetBuilding.model.position);
+    
     removeBuilding(targetBuilding);
   }
   
   function createLightningVFX(position) {
+    gameAudiosounds.GAthunder.play();
     const loader = new GLTFLoader();
     loader.load(
       '../public/Models/Disaster/lightning/lightning.gltf', // Update the path to your GLTF model
@@ -1502,9 +1515,10 @@ export function initializeDisasterSystem(scene, buildings) {
     }
   });
         scene.add(lightning);
-  
+        
         // Remove the lightning effect after 500ms
         setTimeout(() => scene.remove(lightning), 500);
+        
       },
       undefined,
       (error) => {
@@ -1545,7 +1559,7 @@ export function initializeDisasterSystem(scene, buildings) {
     }
   });
         scene.add(tornado);
-
+        gameAudiosounds.GAtornado.play();
         let angle = 0;
         const startTime = performance.now();
         const duration = 2000;
