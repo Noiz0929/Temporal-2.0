@@ -1347,14 +1347,14 @@ export function initializeDisasterSystem(scene, buildings) {
     const targetBuilding = buildings[randomIndex];
 
     const loader = new GLTFLoader();
-    loader.load('../public/Models/Island/forest/forest.gltf', (gltf) => {
+    loader.load('../public/Models/Disaster/meteorite/meteorite.gltf', (gltf) => {
       const meteor = gltf.scene;
       meteor.position.set(
         targetBuilding.model.position.x,
         20,
         targetBuilding.model.position.z
       );
-      meteor.scale.set(0.5, 0.5, 0.5);
+      meteor.scale.set(0.1, 0.1, 0.1);
       scene.add(meteor);
 
       const startTime = performance.now();
@@ -1393,14 +1393,16 @@ export function initializeDisasterSystem(scene, buildings) {
   }
 
   function createLightningVFX(position) {
-    const lightningGeometry = new THREE.CylinderGeometry(0.1, 0.1, 10, 32);
-    const lightningMaterial = new THREE.MeshBasicMaterial({ color: 0x87ceeb });
-    const lightning = new THREE.Mesh(lightningGeometry, lightningMaterial);
-
-    lightning.position.set(position.x, position.y + 5, position.z);
+    const loader = new GLTFLoader();
+    loader.load('../public/Models/Disaster/thunder/thunder.gltf', (gltf) => {
+      const lightning = gltf.scene;
+      lightning.scale.set(0.1, 0.1, 0.1); // Adjust the scale as needed
+      lightning.position.set(position.x, position.y , position.z);
+      
     scene.add(lightning);
 
     setTimeout(() => scene.remove(lightning), 500);
+  });
   }
 
   // Tornado destruction
@@ -1414,9 +1416,9 @@ export function initializeDisasterSystem(scene, buildings) {
 
     affectedBuildings.forEach((building) => {
       const loader = new GLTFLoader();
-      loader.load('../public/Models/Island/forest/forest.gltf', (gltf) => {
+      loader.load('../public/Models/Disaster/tornado/tornado.gltf', (gltf) => {
         const tornado = gltf.scene;
-        tornado.scale.set(0.5, 0.5, 0.5);
+        tornado.scale.set(0.1, 0.1, 0.1);
         tornado.position.set(
           building.model.position.x,
           building.model.position.y + 2.5,
