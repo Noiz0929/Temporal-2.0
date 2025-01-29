@@ -1350,14 +1350,14 @@ export function initializeDisasterSystem(scene, buildings) {
     const targetBuilding = buildings[randomIndex];
 
     const loader = new GLTFLoader();
-    loader.load('../public/Models/Island/forest/forest.gltf', (gltf) => {
+    loader.load('../public/Models/Disasters/meteor/meteor.gltf', (gltf) => {
       const meteor = gltf.scene;
       meteor.position.set(
         targetBuilding.model.position.x,
-        20,
+        targetBuilding.model.position.y + 10,
         targetBuilding.model.position.z
       );
-      meteor.scale.set(0.5, 0.5, 0.5);
+      meteor.scale.set(1.0, 1.0, 1.0);
       scene.add(meteor);
 
       const startTime = performance.now();
@@ -1367,7 +1367,7 @@ export function initializeDisasterSystem(scene, buildings) {
         const elapsedTime = performance.now() - startTime;
         const t = Math.min(elapsedTime / duration, 1);
 
-        meteor.position.y = THREE.MathUtils.lerp(20, targetBuilding.model.position.y, t);
+        meteor.position.y = THREE.MathUtils.lerp(10, targetBuilding.model.position.y, t);
 
         if (t < 1) {
           requestAnimationFrame(animateMeteor);
