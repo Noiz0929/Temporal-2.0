@@ -1264,16 +1264,30 @@ function addBuilding(type, tile) {
   buildings.push(building);
 }
 const disasterSystem = initializeDisasterSystem(scene, buildings);
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'd') {
-    triggerDisaster(scene, buildings);
 
-    // Cheat: Add resources to all types
-    for (let i = 0; i < clickCounts.length; i++) {
-      clickCounts[i] += 10000;
-      labels[i].textContent = `${clickModels[i].name}: ${clickCounts[i]} Kilograms / ${currentCost} Kilograms`;
-    }
-    console.log('Cheat activated! Resources increased.');
+document.addEventListener('keydown', (event) => {
+  switch (event.key) {
+    case '1':
+      console.log('Thunder cheat activated!');
+      disasterSystem.triggerThunder();
+      break;
+    case '2':
+      console.log('Tornado cheat activated!');
+      disasterSystem.triggerTornado();
+      break;
+    case '3':
+      console.log('Meteor cheat activated!');
+      disasterSystem.triggerMeteoriteImpact();
+      break;
+    case 'd':
+      console.log('Cheat activated! Resources increased.');
+      for (let i = 0; i < clickCounts.length; i++) {
+        clickCounts[i] += 10000;
+        labels[i].textContent = `${clickModels[i].name}: ${clickCounts[i]} Kilograms / ${currentCost} Kilograms`;
+      }
+      break;
+    default:
+      break;
   }
 });
 
