@@ -1329,12 +1329,15 @@ export function initializeDisasterSystem(scene, buildings) {
   // Helper function to find and remove building from the scene
   function removeBuilding(building) {
     const tile = building.tile;
-    if (tile) tile.building = null;
+    if (tile) {
+        tile.building = null;
+        tile.occupied = false;  // Reset tile occupation status
+    }
     scene.remove(building.model);
     const index = buildings.indexOf(building);
     if (index !== -1) buildings.splice(index, 1);
     console.log(`${building.type} was destroyed.`);
-  }
+}
 
   // Meteorite impact
   function triggerMeteoriteImpact() {
@@ -1351,7 +1354,7 @@ export function initializeDisasterSystem(scene, buildings) {
       const meteor = gltf.scene;
       meteor.position.set(
         targetBuilding.model.position.x,
-        20,
+        targetBuilding.model.position.y + 10,
         targetBuilding.model.position.z
       );
       meteor.scale.set(0.1, 0.1, 0.1);
@@ -1364,7 +1367,7 @@ export function initializeDisasterSystem(scene, buildings) {
         const elapsedTime = performance.now() - startTime;
         const t = Math.min(elapsedTime / duration, 1);
 
-        meteor.position.y = THREE.MathUtils.lerp(20, targetBuilding.model.position.y, t);
+        meteor.position.y = THREE.MathUtils.lerp(10, targetBuilding.model.position.y, t);
 
         if (t < 1) {
           requestAnimationFrame(animateMeteor);
@@ -1378,31 +1381,37 @@ export function initializeDisasterSystem(scene, buildings) {
     });
   }
 
-  // Thunder strike
   function triggerThunder() {
     if (buildings.length === 0) {
       console.log("No buildings to damage.");
       return;
     }
-
+  
     const randomIndex = Math.floor(Math.random() * buildings.length);
     const targetBuilding = buildings[randomIndex];
-
+  
     createLightningVFX(targetBuilding.model.position);
     removeBuilding(targetBuilding);
   }
-
+  
   function createLightningVFX(position) {
     const loader = new GLTFLoader();
-    loader.load('../public/Models/Disaster/thunder/thunder.gltf', (gltf) => {
-      const lightning = gltf.scene;
-      lightning.scale.set(0.1, 0.1, 0.1); // Adjust the scale as needed
-      lightning.position.set(position.x, position.y , position.z);
-      
-    scene.add(lightning);
-
-    setTimeout(() => scene.remove(lightning), 500);
-  });
+    loader.load(
+      '../public/Models/Disasters/lightning/lightning.gltf', // Update the path to your GLTF model
+      (gltf) => {
+        const lightning = gltf.scene;
+        lightning.scale.set(0.1, 0.1, 0.1); // Adjust scale as necessary
+        lightning.position.set(position.x, position.y - 1, position.z);
+        scene.add(lightning);
+  
+        // Remove the lightning effect after 500ms
+        setTimeout(() => scene.remove(lightning), 500);
+      },
+      undefined,
+      (error) => {
+        console.error("Error loading thunder effect model:", error);
+      }
+    );
   }
 
   // Tornado destruction
@@ -1421,7 +1430,7 @@ export function initializeDisasterSystem(scene, buildings) {
         tornado.scale.set(0.1, 0.1, 0.1);
         tornado.position.set(
           building.model.position.x,
-          building.model.position.y + 2.5,
+          building.model.position.y ,
           building.model.position.z
         );
         scene.add(tornado);
