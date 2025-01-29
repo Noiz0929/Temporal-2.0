@@ -30,6 +30,58 @@ directionalLight.position.set(10, 20, 10);
 directionalLight.castShadow = true;
 scene.add(directionalLight);
 
+// Audio Setup
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+// Background Music
+const backgroundMusic = new THREE.Audio(listener);
+const audioLoader = new THREE.AudioLoader();
+
+audioLoader.load('audio/BackgroundMusic.mp3', (buffer) => {
+  backgroundMusic.setBuffer(buffer);
+  backgroundMusic.setLoop(true);
+  backgroundMusic.setVolume(0.5);
+  backgroundMusic.play();
+});
+
+// Sound Effects
+const soundEffects = {
+  upgrade: new THREE.Audio(listener),
+  meteorite: new THREE.Audio(listener),
+  tornado: new THREE.Audio(listener),
+  thunder: new THREE.Audio(listener),
+};
+
+// Load Sound Effects
+audioLoader.load('audio/Upgrade.mp3', (buffer) => {
+  soundEffects.upgrade.setBuffer(buffer);
+  soundEffects.upgrade.setVolume(1.5);
+});
+
+audioLoader.load('audio/Meteor.mp3', (buffer) => {
+  soundEffects.meteorite.setBuffer(buffer);
+  soundEffects.meteorite.setVolume(1.0);
+});
+
+audioLoader.load('audio/Tornado.mp3', (buffer) => {
+  soundEffects.tornado.setBuffer(buffer);
+  soundEffects.tornado.setVolume(0.1);
+});
+
+audioLoader.load('audio/Thunder.mp3', (buffer) => {
+  soundEffects.thunder.setBuffer(buffer);
+  soundEffects.thunder.setVolume(0.1);
+});
+
+// Play Sound Effects
+function playSound(effect) {
+  if (soundEffects[effect] && !soundEffects[effect].isPlaying) {
+    soundEffects[effect].play();
+  }
+}
+
+
 // Grid Dimensions
 const gridSize = 10; // 10x10 tiles per grid
 const tileSize = 2; // Size of each tile
@@ -46,7 +98,7 @@ const playerResources = {
 };
 
 // Colors for 5 islands
-const islandColors = [0x1e90ff, 0xff6347, 0x32cd32, 0xffd700, 0x8a2be2];
+const islandColors = [0x009000, 0x009000, 0x009000, 0x009000, 0x009000];
 
 // Island Positions
 const islandPositions = [
@@ -78,6 +130,13 @@ function createIsland(color, position) {
       tile.castShadow = true;
       tile.receiveShadow = true;
       scene.add(tile);
+
+      // Add edges for the tile
+      const edges = new THREE.EdgesGeometry(tileGeometry);
+      const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x000000 }); // Black stroke
+      const edgeLines = new THREE.LineSegments(edges, edgeMaterial);
+      edgeLines.raycast = () => {}; // Disable raycasting for edges
+      tile.add(edgeLines); // Add edges as a child of the tile
 
       // Store tile position for later use
       tiles.push({
@@ -125,45 +184,117 @@ function loadModelAtTile(modelPath, tileIndex) {
 const buildingTypes = {
   Lumberyard: {
     resourceType: "wood", // Generates wood
-    resources: [{ wood: 10, stone: 5 }, { wood: 20, stone: 10 }, { wood: 40, stone: 20 }],
+    resources: [{ wood: 10, stone: 5, humans: 1 }, { wood: 20, stone: 10, humans: 5 }, { wood: 40, stone: 20, iron: 5, humans: 20 }],
     generationRates: [1, 2, 4],
-    modelPaths: ['public/model/Dragon_Evolved.gltf', 'public/model/Ghost.gltf', 'public/model/Demon.gltf'],
+    modelPaths: ['model/Lumberyard_1.glb', 'model/Lumberyard_2.glb', 'model/Lumberyard_3.glb'],
+    levelOffsets: [
+      { x: 0, y: 0.9, z: 0 }, // Level 1 offset
+      { x: 0, y: 0.8, z: 0 }, // Level 2 offset
+      { x: 0, y: 0.7, z: 0 }, // Level 3 offset
+    ],
+    levelScales: [
+      { x: 1, y: 1, z: 1 },   // Level 1 scale
+      { x: 1.0, y: 1.0, z: 1.0 }, // Level 2 scale
+      { x: 1.0, y: 1.0, z: 1.0 }, // Level 3 scale
+    ],
   },
   Quarry: {
     resourceType: "stone", // Generates stone
-    resources: [{ wood: 5, stone: 10 }, { wood: 10, stone: 20 }, { wood: 20, stone: 40 }],
+    resources: [{ wood: 10, stone: 10, humans: 1 }, { wood: 20, stone: 20, iron: 5, humans: 5 }, { wood: 40, stone: 40, iron: 10, humans: 30 }],
     generationRates: [1, 2, 3],
-    modelPaths: ['public/model/Ghost.gltf', 'public/model/Dragon_Evolved.gltf', 'public/model/Demon.gltf'],
+    modelPaths: ['model/Quarry_1.glb', 'model/Quarry_2.glb', 'model/Quarry_3.glb'],
+    levelOffsets: [
+      { x: 0, y: 0.8, z: 0 }, // Level 1 offset
+      { x: 0, y: 0.6, z: 0 }, // Level 2 offset
+      { x: 0, y: 0.7, z: 0 }, // Level 3 offset
+    ],
+    levelScales: [
+      { x: 1, y: 1, z: 1 },   // Level 1 scale
+      { x: 2.1, y: 1.2, z: 2.1 }, // Level 2 scale
+      { x: 1.0, y: 1.0, z: 1.0 }, // Level 3 scale
+    ],
   },
   IronMine: {
     resourceType: "iron", // Generates iron
-    resources: [{ wood: 10, stone: 15 }, { wood: 20, stone: 30 }, { wood: 40, stone: 60 }],
+    resources: [{ wood: 20, stone: 25, iron: 5, humans: 5 }, { wood: 40, stone: 50, iron: 20, humans: 20 }, { wood: 80, stone: 100, iron: 50, humans: 100 }],
     generationRates: [1, 2, 3],
-    modelPaths: ['public/model/Demon.gltf', 'models/IronMine_Level2.gltf', 'models/IronMine_Level3.gltf'],
+    modelPaths: ['model/IronMine_1.glb', 'model/IronMine_2.glb', 'model/IronMine_3.glb'],
+    levelOffsets: [
+      { x: 0, y: 0.6, z: 0 }, // Level 1 offset
+      { x: 0, y: 0.5, z: 0 }, // Level 2 offset
+      { x: 0, y: 0.8, z: 0 }, // Level 3 offset
+    ],
+    levelScales: [
+      { x: 1.5, y: 1.3, z: 1.5 },   // Level 1 scale
+      { x: 0.9, y: 1.0, z: 0.9 }, // Level 2 scale
+      { x: 1.0, y: 1.0, z: 1.0 }, // Level 3 scale
+    ],
   },
   House: {
     resourceType: "humans", // Generates humans
-    resources: [{ wood: 10, stone: 5 }, { wood: 20, stone: 10 }, { wood: 40, stone: 20 }],
+    resources: [{ wood: 10, stone: 5, food: 10 }, { wood: 20, stone: 30, food: 20 }, { wood: 50, stone: 50, iron: 50, food: 50 }],
     generationRates: [1, 2, 4],
-    modelPaths: ['public/model/Dragon_Evolved.gltf', 'models/House_Level2.gltf', 'models/House_Level3.gltf'],
+    modelPaths: ['model/House_1.glb', 'model/House_2.glb', 'model/House_3.glb'],
+    levelOffsets: [
+      { x: 0, y: 0.8, z: 0 }, // Level 1 offset
+      { x: 0, y: 1.0, z: 0 }, // Level 2 offset
+      { x: 0, y: 0.1, z: 0 }, // Level 3 offset
+    ],
+    levelScales: [
+      { x: 2, y: 2, z: 2 },   // Level 1 scale
+      { x: 2.0, y: 2.0, z: 2.0 }, // Level 2 scale
+      { x: 1.0, y: 1.0, z: 1.0 }, // Level 3 scale
+    ],
   },
   Paddy: {
     resourceType: "food", // Generates food
-    resources: [{ wood: 5, stone: 5 }, { wood: 10, stone: 10 }, { wood: 20, stone: 20 }],
+    resources: [{ wood: 5, stone: 5, humans: 1 }, { wood: 20, stone: 10, humans: 10 }, { wood: 40, stone: 30, humans: 50 }],
     generationRates: [1, 2, 3],
-    modelPaths: ['public/model/Dragon_Evolved.gltf', 'models/Paddy_Level2.gltf', 'models/Paddy_Level3.gltf'],
+    modelPaths: ['model/Paddy_1.glb', 'model/Paddy_2.glb', 'model/Paddy_3.glb'],
+    levelOffsets: [
+      { x: 0, y: 0.5, z: 0 }, // Level 1 offset
+      { x: 0, y: 0.3, z: 0 }, // Level 2 offset
+      { x: 0, y: 0.5, z: 0 }, // Level 3 offset
+    ],
+    levelScales: [
+      { x: 1, y: 1, z: 1 },   // Level 1 scale
+      { x: 2.0, y: 2.0, z: 2.0 }, // Level 2 scale
+      { x: 2.0, y: 2.0, z: 2.0 }, // Level 3 scale
+    ],
   },
   NuclearPlant: {
     resourceType: "nuclear", // Generates nuclear material
-    resources: [{ wood: 20, stone: 50, iron: 30 }, { wood: 40, stone: 100, iron: 60 }],
-    generationRates: [1, 2],
-    modelPaths: ['public/model/Dragon_Evolved.gltf', 'models/NuclearPlant_Level2.gltf'],
+    resources: [{ wood: 100, stone: 150, iron: 200, humans: 100 }, { wood: 200, stone: 300, iron: 400, humans: 500 }, { wood: 400, stone: 600, iron: 800, humans: 1500 }],
+    generationRates: [1, 2, 3],
+    modelPaths: ['model/NuclearPlant_2.glb', 'model/NuclearPlant_1.glb', 'model/NuclearPlant_3.glb'],
+    levelOffsets: [
+      { x: 0, y: 0.6, z: 0 }, // Level 1 offset
+      { x: 0, y: 0.8, z: 0 }, // Level 2 offset
+      { x: 0, y: 0.8, z: 0 }, // Level 3 offset
+    ],
+    levelScales: [
+      { x: 1, y: 1, z: 1 },   // Level 1 scale
+      { x: 0.9, y: 1.2, z: 0.9 }, // Level 2 scale
+      { x: 0.9, y: 1.0, z: 0.9 }, // Level 3 scale
+    ],
   },
   MainBuilding: {
     resourceType: null, // Doesn't generate resources
-    resources: [{ wood: 50, stone: 50 }, { wood: 100, stone: 100 }, { wood: 200, stone: 200 }], // Costs for each level
+    resources: [{ wood: 50, stone: 50, humans:5 }, { wood: 500, stone: 500, humans:50 }, { wood: 700, stone: 1000, iron: 1500, humans: 100, nuclear: 100 }, { iron: 2000, nuclear: 5000 }], // Costs for each level
     generationRates: [], // No generation
-    modelPaths: ['model/Glub.gltf', 'model/Dragon_Evolved.gltf', 'model/Demon.gltf'],
+    modelPaths: ['model/MainBuilding_1.glb', 'model/MainBuilding_2.glb', 'model/MainBuilding_2.glb', 'model/MainBuilding_2.glb'],
+    levelOffsets: [
+      { x: 0, y: 0.5, z: 0 }, // Level 1 offset
+      { x: 0, y: 0.5, z: 0 }, // Level 2 offset
+      { x: 0, y: 1.5, z: 0 }, // Level 3 offset
+      { x: 0, y: 1.5, z: 0 }, // Level 4 offset
+    ],
+    levelScales: [
+      { x: 1, y: 1, z: 1 },   // Level 1 scale
+      { x: 1.2, y: 1.2, z: 1.2 }, // Level 2 scale
+      { x: 1.2, y: 1.2, z: 1.2 }, // Level 3 scale
+      { x: 1.2, y: 1.2, z: 1.2 }, // Level 4 scale
+    ],
   },
 };
 
@@ -182,6 +313,8 @@ class Building {
     this.resourceType = data.resourceType;
     this.generationRates = data.generationRates;
     this.modelPaths = data.modelPaths;
+    this.levelOffsets = data.levelOffsets || []; // Array of offsets for each level
+    this.levelScales = data.levelScales || []; // Array of scales for each level
 
     this.loadModel();
   }
@@ -196,9 +329,19 @@ class Building {
         }
         this.model = gltf.scene;
         this.model.userData.building = this;
-        this.model.position.copy(this.tile.position);
-        this.model.position.y += tileHeight;
-        this.model.scale.set(0.5, 0.5, 0.5);
+
+        // Adjust position based on tile and level offset
+        const offset = this.levelOffsets[this.level - 1] || { x: 0, y: 0, z: 0 };
+        this.model.position.set(
+          this.tile.position.x + offset.x,
+          this.tile.position.y + offset.y,
+          this.tile.position.z + offset.z
+        );
+
+        // Adjust scale based on level
+        const scale = this.levelScales[this.level - 1] || { x: 1, y: 1, z: 1 };
+        this.model.scale.set(scale.x, scale.y, scale.z);
+
         scene.add(this.model);
       },
       undefined,
@@ -226,12 +369,18 @@ class Building {
 
     this.level++;
     this.loadModel();
+    playSound('upgrade');
     console.log(`${this.type} upgraded to Level ${this.level}!`);
   }
 
   generateResources(playerResources) {
     const rate = this.generationRates[this.level - 1];
-    playerResources[this.type.toLowerCase()] += rate;
+    const resourceType = this.resourceType;
+
+    if (playerResources[resourceType] !== undefined) {
+      playerResources[resourceType] += rate;
+      console.log(`Generated ${rate} ${resourceType} from ${this.type}`);
+    }
   }
 }
 
@@ -326,6 +475,22 @@ function selectBuildingType(type) {
     setMode("build");
   }
   selectedBuildingType = type;
+
+  // Update the resource info dynamically
+    const buildingData = buildingTypes[type];
+    if (buildingData) {
+        const cost = buildingData.resources[0]; // Cost for level 1
+        const requirements = Object.entries(cost)
+            .map(([resource, amount]) => `${resource}: ${amount}`)
+            .join(', ');
+
+        resourceInfo.building = type;
+        resourceInfo.requirements = requirements;
+    } else {
+        resourceInfo.building = 'None';
+        resourceInfo.requirements = 'No data available';
+    }
+
   console.log(`Selected building type: ${type}`);
 }
 
@@ -358,7 +523,7 @@ function triggerMeteoriteImpact() {
   const targetBuilding = eligibleBuildings[randomIndex];
 
   const loader = new GLTFLoader();
-  loader.load('model/Demon.gltf', (gltf) => {
+  loader.load('model/Meteorite.glb', (gltf) => {
     const meteor = gltf.scene;
 
     meteor.position.set(targetBuilding.model.position.x, 20, targetBuilding.model.position.z); // Start above the building
@@ -366,7 +531,8 @@ function triggerMeteoriteImpact() {
     scene.add(meteor);
 
     const startTime = performance.now();
-    const duration = 1000; // 1 second
+    const duration = 2000; // 1 second
+    playSound('meteorite');
 
     function animateMeteor() {
       const elapsedTime = performance.now() - startTime;
@@ -417,6 +583,7 @@ function triggerThunder() {
     buildings.splice(buildings.indexOf(targetBuilding), 1);
     console.log(`${targetBuilding.type} was destroyed by thunder.`);
   }
+  playSound('thunder');
 }
 
 function triggerTornado() {
@@ -432,13 +599,13 @@ function triggerTornado() {
     // Load a new tornado model for each building
     const loader = new GLTFLoader();
     loader.load(
-      'model/Demon.gltf',
+      'model/Tornado.glb',
       (gltf) => {
         const tornado = gltf.scene;
-        tornado.scale.set(0.5, 0.5, 0.5); // Scale the tornado model
+        tornado.scale.set(1.0, 1.0, 1.0); // Scale the tornado model
         tornado.position.set(
           building.model.position.x,
-          building.model.position.y + 2.5, // Slightly above the building
+          building.model.position.y + 1.5, // Slightly above the building
           building.model.position.z
         );
         tornado.traverse((child) => {
@@ -481,6 +648,7 @@ function triggerTornado() {
               console.log(`${building.type} was destroyed by a tornado.`);
             }
           }
+          playSound('tornado');
         }
 
         animateTornado();
@@ -554,24 +722,64 @@ window.addEventListener('mousemove', (event) => {
   const intersections = raycaster.intersectObjects(scene.children, true);
 
   if (intersections.length > 0) {
-    const object = intersections[0].object;
+    let intersectedObject = intersections[0].object;
 
-    if (object.userData.isVFX) return;
+    if (intersectedObject.userData.isVFX) return;
 
-    if (hoveredObject && hoveredObject !== object) {
-      // Reset the previously hovered object
-      hoveredObject.material.emissive.set(0x000000);
+    // Traverse up the hierarchy to find the root object if necessary
+    let parentObject = intersectedObject;
+    while (parentObject.parent && !parentObject.userData.building) {
+      parentObject = parentObject.parent;
     }
 
-    // Highlight the new hovered object
-    hoveredObject = object;
-    hoveredObject.material.emissive = new THREE.Color(0x555555);
+    // Reset the previous hovered object if it's different
+    if (hoveredObject && hoveredObject !== intersectedObject) {
+      if (hoveredObject.material && hoveredObject.material.emissive) {
+        hoveredObject.material.emissive.set(0x000000);
+      }
+    }
+
+    // Highlight the current object
+    hoveredObject = intersectedObject;
+    if (hoveredObject.material && hoveredObject.material.emissive) {
+      hoveredObject.material.emissive.set(new THREE.Color(0x555555));
+    }
+
+    // Update resource info if the object is a building
+    if (parentObject.userData.building) {
+      const building = parentObject.userData.building;
+      const buildingType = building.type;
+      const buildingLevel = building.level;
+
+      if (!buildingTypes[buildingType]) {
+        console.warn("Invalid building type:", buildingType);
+        return;
+      }
+
+      const resources = buildingTypes[buildingType]?.resources;
+      if (resources && buildingLevel < resources.length) {
+        const upgradeData = resources[buildingLevel];
+        resourceInfo.upgradeRequire = Object.entries(upgradeData)
+          .map(([resource, amount]) => `${resource}: ${amount}`)
+          .join(', ');
+      } else {
+        resourceInfo.upgradeRequire = 'No upgrade available';
+      }
+    } else {
+      resourceInfo.upgradeRequire = 'None'; // Not a building
+    }
   } else if (hoveredObject) {
     // Reset the last hovered object if no intersection
-    hoveredObject.material.emissive.set(0x000000);
+    if (hoveredObject.material && hoveredObject.material.emissive) {
+      hoveredObject.material.emissive.set(0x000000);
+    }
     hoveredObject = null;
+
+    resourceInfo.upgradeRequire = 'None'; // Reset resource info
   }
 });
+
+
 
 window.addEventListener("mousedown", (event) => {
   // Convert mouse position to normalized device coordinates (-1 to +1)
@@ -651,6 +859,40 @@ disasterFolder.add({ Meteorite: triggerMeteoriteImpact }, "Meteorite").name("Tri
 disasterFolder.add({ Thunder: triggerThunder }, "Thunder").name("Trigger Thunder");
 disasterFolder.add({ Tornado: triggerTornado }, "Tornado").name("Trigger Tornado");
 disasterFolder.open();
+
+const audioFolder = gui.addFolder('Audio');
+audioFolder.add({ toggleMusic: () => {
+  if (backgroundMusic.isPlaying) {
+    backgroundMusic.pause();
+  } else {
+    backgroundMusic.play();
+  }
+} }, 'toggleMusic').name('Toggle Music');
+
+audioFolder.add({ volume: 0.5 }, 'volume', 0, 1).onChange((value) => {
+  backgroundMusic.setVolume(value);
+}).name('Music Volume');
+audioFolder.open();
+
+// GUI Resource Info
+const requirementGUI = new GUI();
+requirementGUI.domElement.style.left = '0px';
+requirementGUI.domElement.style.top = '550px';
+requirementGUI.domElement.style.width = '700px';
+requirementGUI.domElement.style.zIndex = '9999';
+
+const resourceInfo = {
+    building: 'None',
+    requirements: 'Select a building to see requirements',
+    upgradeRequire: 'None',
+};
+const requireFolder = requirementGUI.addFolder('Resource Requirements Info');
+requireFolder.add(resourceInfo, 'building').name('Building').listen();
+requireFolder.add(resourceInfo, 'requirements').name('Requirements').listen();
+requireFolder.add(resourceInfo, 'upgradeRequire').name('Upgrade Requirements').listen();
+requireFolder.open();
+// Adjust the width of the requirements folder
+requireFolder.domElement.style.width = '700px';  // Increase width for better visibility
 
 // Animation Loop
 function animate() {
