@@ -314,6 +314,7 @@ export function createScene() {
 
   const buildingTypes = {
     Wood: {
+      name: "Timber Mill",
       resourceType: "wood",
       cost: { wood: 200, stone: 100 },
       generationRates: [1],
@@ -321,6 +322,7 @@ export function createScene() {
       scale: 0.1,
     },
     Stone: {
+      name: "Quarry",
       resourceType: "stone",
       cost: { wood: 100, stone: 200 },
       generationRates: [1],
@@ -328,6 +330,7 @@ export function createScene() {
       scale: 0.1,
     },
     Metal: {
+      name: "Foundry",
       resourceType: "metal",
       cost: { wood: 300, stone: 300 },
       generationRates: [1],
@@ -335,6 +338,7 @@ export function createScene() {
       scale: 0.1,
     },
     Food: {
+      name: "Farm",
       resourceType: "food",
       cost: { wood: 150, stone: 100 },
       generationRates: [1],
@@ -1218,11 +1222,43 @@ Object.keys(buildingTypes).forEach((type) => {
 });
 buildFolder.open();
 
+// GUI Resource Info
+const requirementGUI = new GUI();
+requirementGUI.domElement.style.left = '0px';
+requirementGUI.domElement.style.top = '550px';
+requirementGUI.domElement.style.width = '700px';
+requirementGUI.domElement.style.zIndex = '9999';
 
+const resourceInfo = {
+    building: 'None',
+    requirements: 'Select a building to see requirements',
+};
+const requireFolder = requirementGUI.addFolder('Resource Requirements Info');
+requireFolder.add(resourceInfo, 'building').name('Building').listen();
+requireFolder.add(resourceInfo, 'requirements').name('Requirements').listen();
+requireFolder.open();
+// Adjust the width of the requirements folder
+requireFolder.domElement.style.width = '700px';  // Increase width for better visibility
 
 function selectBuildingType(type) {
   console.log(`Selected building type: ${type}`);
   selectedBuildingType = type;
+
+  const buildingData = buildingTypes[type];
+    if (buildingData) {
+        const cost = buildingData.cost; // Cost for level 1
+        const requirements = Object.entries(cost)
+            .map(([resource, amount]) => `${resource}: ${amount}`)
+            .join(', ');
+
+        resourceInfo.building = buildingData.name;
+        resourceInfo.requirements = requirements;
+    } else {
+        resourceInfo.building = 'None';
+        resourceInfo.requirements = 'No data available';
+    }
+
+  console.log(`Selected building type: ${type}`);
 }
 
 
